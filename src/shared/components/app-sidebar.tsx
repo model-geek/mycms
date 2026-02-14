@@ -38,8 +38,14 @@ const settingsItems = [
   { title: "設定", icon: Settings, segment: "settings" },
 ];
 
-export function AppSidebar({ serviceId }: { serviceId?: string }) {
+function extractServiceId(pathname: string): string | undefined {
+  const match = pathname.match(/^\/services\/([^/]+)/);
+  return match?.[1];
+}
+
+export function AppSidebar() {
   const pathname = usePathname();
+  const serviceId = extractServiceId(pathname);
 
   const basePath = serviceId ? `/services/${serviceId}` : "";
 

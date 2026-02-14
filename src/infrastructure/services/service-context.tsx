@@ -27,3 +27,7 @@ export function useService() {
   }
   return context;
 }
+
+export function useServiceOptional() {
+  return useContext(ServiceContext);
+}
