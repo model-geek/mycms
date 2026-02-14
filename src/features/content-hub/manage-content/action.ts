@@ -5,7 +5,9 @@ import { contents } from "@/db/schema";
 import type { ActionResult } from "@/shared/types";
 import { eq } from "drizzle-orm";
 
+import { recordVersion } from "../content-versions/action";
 import type { Content } from "../model";
+import { dispatchToAllWebhooks } from "../../webhooks/dispatch-webhook/dispatcher";
 
 import { createContentSchema, updateContentSchema } from "./validations";
 
@@ -30,7 +32,26 @@ export async function createContent(
       })
       .returning();
 
-    return { success: true, data: content as Content };
+    const c = content as Content;
+
+    // バージョン記録
+    await recordVersion(c.id, parsed.data);
+
+    // Webhook 送信
+    void dispatchToAllWebhooks(c.serviceId, "content.created", {
+      contentId: c.id,
+      apiSchemaId: c.apiSchemaId,
+      status: c.status,
+    });
+
+    if (isPublished) {
+      void dispatchToAllWebhooks(c.serviceId, "content.published", {
+        contentId: c.id,
+        apiSchemaId: c.apiSchemaId,
+      });
+    }
+
+    return { success: true, data: c };
   } catch (error) {
     if (error instanceof Error) {
       return { success: false, error: error.message };
@@ -81,7 +102,26 @@ export async function updateContent(
       .where(eq(contents.id, id))
       .returning();
 
-    return { success: true, data: content as Content };
+    const c = content as Content;
+
+    // バージョン記録
+    await recordVersion(c.id, parsed.data);
+
+    // Webhook 送信
+    void dispatchToAllWebhooks(c.serviceId, "content.updated", {
+      contentId: c.id,
+      apiSchemaId: c.apiSchemaId,
+      status: c.status,
+    });
+
+    if (isPublishing) {
+      void dispatchToAllWebhooks(c.serviceId, "content.published", {
+        contentId: c.id,
+        apiSchemaId: c.apiSchemaId,
+      });
+    }
+
+    return { success: true, data: c };
   } catch (error) {
     if (error instanceof Error) {
       return { success: false, error: error.message };
@@ -102,6 +142,14 @@ export async function deleteContent(
     if (!content) {
       return { success: false, error: "コンテンツが見つかりません" };
     }
+
+    const c = content as Content;
+
+    // Webhook 送信
+    void dispatchToAllWebhooks(c.serviceId, "content.deleted", {
+      contentId: c.id,
+      apiSchemaId: c.apiSchemaId,
+    });
 
     return { success: true, data: undefined };
   } catch (error) {
@@ -125,8 +173,8 @@ export async function publishContent(
       return { success: false, error: "コンテンツが見つかりません" };
     }
 
-    const c = existing as Content;
-    const publishData = c.draftData ?? c.data;
+    const e = existing as Content;
+    const publishData = e.draftData ?? e.data;
 
     if (!publishData) {
       return { success: false, error: "公開するデータがありません" };
@@ -134,20 +182,31 @@ export async function publishContent(
 
     const now = new Date();
 
+    // バージョン記録（公開前のスナップショット）
+    await recordVersion(e.id, publishData);
+
     const [content] = await db
       .update(contents)
       .set({
         data: publishData,
         draftData: null,
         status: "published",
-        publishedAt: c.publishedAt ?? now,
-        revisedAt: c.publishedAt ? now : null,
+        publishedAt: e.publishedAt ?? now,
+        revisedAt: e.publishedAt ? now : null,
         updatedAt: now,
       })
       .where(eq(contents.id, id))
       .returning();
 
-    return { success: true, data: content as Content };
+    const c = content as Content;
+
+    // Webhook 送信
+    void dispatchToAllWebhooks(c.serviceId, "content.published", {
+      contentId: c.id,
+      apiSchemaId: c.apiSchemaId,
+    });
+
+    return { success: true, data: c };
   } catch (error) {
     if (error instanceof Error) {
       return { success: false, error: error.message };
@@ -169,12 +228,12 @@ export async function unpublishContent(
       return { success: false, error: "コンテンツが見つかりません" };
     }
 
-    const c = existing as Content;
+    const e = existing as Content;
 
     const [content] = await db
       .update(contents)
       .set({
-        draftData: c.data,
+        draftData: e.data,
         data: null,
         status: "draft",
         publishedAt: null,
@@ -183,7 +242,15 @@ export async function unpublishContent(
       .where(eq(contents.id, id))
       .returning();
 
-    return { success: true, data: content as Content };
+    const c = content as Content;
+
+    // Webhook 送信
+    void dispatchToAllWebhooks(c.serviceId, "content.unpublished", {
+      contentId: c.id,
+      apiSchemaId: c.apiSchemaId,
+    });
+
+    return { success: true, data: c };
   } catch (error) {
     if (error instanceof Error) {
       return { success: false, error: error.message };
