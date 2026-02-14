@@ -13,6 +13,8 @@ import {
   LayoutDashboard,
   Moon,
   Sun,
+  PanelLeftClose,
+  PanelLeftOpen,
 } from "lucide-react";
 import {
   Sidebar,
@@ -25,7 +27,7 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-  SidebarTrigger,
+  useSidebar,
 } from "@/shared/ui/sidebar";
 import { UserMenu } from "@/infrastructure/auth/user-menu";
 
@@ -131,10 +133,14 @@ export function AppSidebar() {
       </SidebarContent>
       <SidebarFooter>
         <UserMenu />
-        <div className="flex items-center gap-1">
-          <ThemeToggle />
-          <SidebarTrigger className="flex-1" />
-        </div>
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <ThemeToggle />
+          </SidebarMenuItem>
+          <SidebarMenuItem>
+            <CollapseToggle />
+          </SidebarMenuItem>
+        </SidebarMenu>
       </SidebarFooter>
     </Sidebar>
   );
@@ -142,14 +148,31 @@ export function AppSidebar() {
 
 function ThemeToggle() {
   const { setTheme, resolvedTheme } = useTheme();
+  const isDark = resolvedTheme === "dark";
 
   return (
     <SidebarMenuButton
-      tooltip={resolvedTheme === "dark" ? "ライトモード" : "ダークモード"}
-      onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}
+      tooltip={isDark ? "ライトモード" : "ダークモード"}
+      onClick={() => setTheme(isDark ? "light" : "dark")}
     >
       <Sun className="size-4 dark:hidden" />
       <Moon className="hidden size-4 dark:block" />
+      <span>{isDark ? "ライトモード" : "ダークモード"}</span>
+    </SidebarMenuButton>
+  );
+}
+
+function CollapseToggle() {
+  const { toggleSidebar, state } = useSidebar();
+  const isExpanded = state === "expanded";
+
+  return (
+    <SidebarMenuButton
+      tooltip={isExpanded ? "サイドバーを閉じる" : "サイドバーを開く"}
+      onClick={toggleSidebar}
+    >
+      {isExpanded ? <PanelLeftClose className="size-4" /> : <PanelLeftOpen className="size-4" />}
+      <span>{isExpanded ? "サイドバーを閉じる" : "サイドバーを開く"}</span>
     </SidebarMenuButton>
   );
 }
