@@ -1,10 +1,11 @@
 import { db } from "@/db";
 import { apiSchemas, contents } from "@/db/schema";
-import { eq, and, desc, asc, count, sql, inArray } from "drizzle-orm";
+import { eq, and, desc, asc, count, sql, inArray, type SQL } from "drizzle-orm";
 import { NextResponse } from "next/server";
 
 import type { Content } from "../model";
 
+import { buildFilterSql } from "./filter-parser";
 import type { ContentApiQuery, ContentListApiResponse } from "./model";
 import { serializeContent, serializeContentWithDraft } from "./serializer";
 
@@ -58,7 +59,7 @@ export async function handleListContents(
     return errorResponse("このAPIはリスト型ではありません", 400);
   }
 
-  const conditions = [
+  const conditions: (SQL | undefined)[] = [
     eq(contents.apiSchemaId, schema.id),
     eq(contents.serviceId, serviceId),
     eq(contents.status, "published"),
@@ -70,6 +71,13 @@ export async function handleListContents(
 
   if (query.q) {
     conditions.push(sql`${contents.data}::text ILIKE ${"%" + query.q + "%"}`);
+  }
+
+  if (query.filters && query.filters.length > 0) {
+    const filterSql = buildFilterSql(query.filters);
+    if (filterSql) {
+      conditions.push(filterSql);
+    }
   }
 
   const where = and(...conditions);
