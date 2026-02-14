@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Code2 } from "lucide-react";
+import { Code2, Settings2 } from "lucide-react";
+import Link from "next/link";
 import { toast } from "sonner";
 
 import { ContentList } from "@/features/content-hub/browse-contents/components/content-list";
@@ -56,14 +57,24 @@ export function ContentListWrapper({
           contents={contents}
           onDelete={handleDelete}
           headerAction={
-            <Button
-              variant={panelOpen ? "secondary" : "outline"}
-              size="sm"
-              onClick={() => setPanelOpen(!panelOpen)}
-            >
-              <Code2 className="size-4" />
-              APIリファレンス
-            </Button>
+            <div className="flex gap-2">
+              <Button variant="outline" size="sm" asChild>
+                <Link
+                  href={`/services/${serviceId}/apis/${apiId}/schema`}
+                >
+                  <Settings2 className="size-4" />
+                  スキーマ編集
+                </Link>
+              </Button>
+              <Button
+                variant={panelOpen ? "secondary" : "outline"}
+                size="sm"
+                onClick={() => setPanelOpen(!panelOpen)}
+              >
+                <Code2 className="size-4" />
+                APIリファレンス
+              </Button>
+            </div>
           }
         />
       </div>

@@ -75,7 +75,13 @@ export function SchemaBuilderWrapper({
         }
 
         toast.success("スキーマを保存しました");
-        router.refresh();
+        if (initialFields.length === 0) {
+          router.push(
+            `/services/${serviceId}/apis/${apiId}/contents/new`
+          );
+        } else {
+          router.refresh();
+        }
       } catch {
         toast.error("スキーマの保存に失敗しました");
       }
