@@ -1,5 +1,6 @@
 import { db } from "@/db";
 import { apiSchemas, contents } from "@/db/schema";
+import { validateApiKey } from "@/features/api-keys/validate-key/middleware";
 import { eq, and, desc, asc, count, sql, inArray } from "drizzle-orm";
 import { NextResponse } from "next/server";
 
@@ -10,6 +11,25 @@ import { serializeContent, serializeContentWithDraft } from "./serializer";
 
 function errorResponse(message: string, status: number) {
   return NextResponse.json({ message }, { status });
+}
+
+export async function authenticateRequest(
+  request: { headers: { get(name: string): string | null } },
+  serviceId: string,
+): Promise<NextResponse | null> {
+  const apiKey = request.headers.get("X-MYCMS-API-KEY");
+
+  if (!apiKey) {
+    return errorResponse("APIキーが必要です", 401);
+  }
+
+  const result = await validateApiKey(apiKey, serviceId);
+
+  if (!result.valid) {
+    return errorResponse("無効なAPIキーです", 403);
+  }
+
+  return null;
 }
 
 async function resolveSchema(serviceId: string, endpointSlug: string) {
