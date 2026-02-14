@@ -8,11 +8,19 @@ export interface MicrocmsApiField {
   required: boolean;
   description?: string;
   selectItems?: { value: string }[];
+  customFieldCrewId?: string;
+}
+
+export interface MicrocmsCustomField {
+  fieldId: string;
+  name: string;
+  fields: MicrocmsApiField[];
+  customFieldCrewId: string;
 }
 
 export interface MicrocmsApiResponse {
   apiFields: MicrocmsApiField[];
-  customFields?: unknown[];
+  customFields?: MicrocmsCustomField[];
 }
 
 /** プレビュー用 */
@@ -25,6 +33,7 @@ export interface PreviewField {
   description: string | null;
   validationRules: Record<string, unknown> | null;
   warning?: string;
+  subFields?: PreviewField[];
 }
 
 export interface PreviewSchema {

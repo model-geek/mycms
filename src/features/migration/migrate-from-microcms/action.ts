@@ -5,7 +5,7 @@ import { services, members, apiSchemas, schemaFields } from "@/db/schema";
 import { requireAuth } from "@/shared/lib/auth-guard";
 import type { ActionResult } from "@/shared/types";
 
-import { mapMicrocmsField } from "./field-mapper";
+import { buildCrewMap, mapMicrocmsField } from "./field-mapper";
 import type {
   MicrocmsApiResponse,
   MigrationPreview,
@@ -50,7 +50,10 @@ export async function fetchMicrocmsSchemas(
       }
 
       const data = (await res.json()) as MicrocmsApiResponse;
-      const fields = (data.apiFields ?? []).map(mapMicrocmsField);
+      const crewMap = buildCrewMap(data.customFields ?? []);
+      const fields = (data.apiFields ?? []).map((f) =>
+        mapMicrocmsField(f, crewMap),
+      );
 
       schemas.push({
         endpoint,

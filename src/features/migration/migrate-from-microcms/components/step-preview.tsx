@@ -10,7 +10,7 @@ import {
   DialogTitle,
 } from "@/shared/ui/dialog";
 
-import type { MigrationPreview, PreviewSchema } from "../types";
+import type { MigrationPreview, PreviewField, PreviewSchema } from "../types";
 
 interface StepPreviewProps {
   preview: MigrationPreview;
@@ -76,6 +76,54 @@ export function StepPreview({
   );
 }
 
+function FieldRow({ field, indent = 0 }: { field: PreviewField; indent?: number }) {
+  return (
+    <>
+      <div
+        className="flex items-center gap-2 text-sm"
+        style={indent > 0 ? { paddingLeft: `${indent * 16}px` } : undefined}
+      >
+        {indent > 0 && (
+          <span className="text-muted-foreground">└</span>
+        )}
+        <code className="text-xs text-muted-foreground">
+          {field.fieldId}
+        </code>
+        <span className="text-muted-foreground">{field.name}</span>
+        <Badge variant="outline" className="text-xs">
+          {field.microcmsKind}
+        </Badge>
+        {field.mycmsKind !== null ? (
+          <>
+            <ArrowRight className="h-3 w-3 text-muted-foreground" />
+            <Badge className="text-xs">{field.mycmsKind}</Badge>
+          </>
+        ) : (
+          <Badge variant="destructive" className="text-xs">
+            スキップ
+          </Badge>
+        )}
+        {field.required && (
+          <Badge variant="secondary" className="text-xs">
+            必須
+          </Badge>
+        )}
+        {field.warning && (
+          <span className="inline-flex items-center gap-1 text-xs text-amber-600">
+            <AlertTriangle className="h-3 w-3 shrink-0" />
+            {field.warning}
+          </span>
+        )}
+      </div>
+      {field.subFields && field.subFields.length > 0 && (
+        field.subFields.map((sub) => (
+          <FieldRow key={sub.fieldId} field={sub} indent={indent + 1} />
+        ))
+      )}
+    </>
+  );
+}
+
 function SchemaCard({ schema }: { schema: PreviewSchema }) {
   if (schema.error) {
     return (
@@ -102,36 +150,7 @@ function SchemaCard({ schema }: { schema: PreviewSchema }) {
       ) : (
         <div className="mt-2 space-y-1">
           {schema.fields.map((field) => (
-            <div key={field.fieldId} className="flex items-center gap-2 text-sm">
-              <code className="text-xs text-muted-foreground">
-                {field.fieldId}
-              </code>
-              <span className="text-muted-foreground">{field.name}</span>
-              <Badge variant="outline" className="text-xs">
-                {field.microcmsKind}
-              </Badge>
-              {field.mycmsKind !== null ? (
-                <>
-                  <ArrowRight className="h-3 w-3 text-muted-foreground" />
-                  <Badge className="text-xs">{field.mycmsKind}</Badge>
-                </>
-              ) : (
-                <Badge variant="destructive" className="text-xs">
-                  スキップ
-                </Badge>
-              )}
-              {field.required && (
-                <Badge variant="secondary" className="text-xs">
-                  必須
-                </Badge>
-              )}
-              {field.warning && (
-                <span className="inline-flex items-center gap-1 text-xs text-amber-600">
-                  <AlertTriangle className="h-3 w-3" />
-                  {field.warning}
-                </span>
-              )}
-            </div>
+            <FieldRow key={field.fieldId} field={field} />
           ))}
         </div>
       )}
