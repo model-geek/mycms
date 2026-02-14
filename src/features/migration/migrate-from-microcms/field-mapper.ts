@@ -96,6 +96,7 @@ export function mapMicrocmsField(
         subFields: mappable.map((sf) => ({
           fieldId: sf.fieldId,
           name: sf.name,
+          kind: sf.mycmsKind,
           mycmsKind: sf.mycmsKind,
           microcmsKind: sf.microcmsKind,
           required: sf.required,
