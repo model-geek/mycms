@@ -2,11 +2,9 @@ import type { MediaRef, MediaUploadResult } from "./media-uploader";
 import { uploadMicrocmsMedia } from "./media-uploader";
 import type { PreviewField } from "./types";
 
-/** デバッグ用: メディアアップロードエラーを収集 */
-export const mediaErrors: string[] = [];
-
 /**
  * microCMS Content API のデータを mycms の data 形式に変換する。
+ * errors 配列にメディアアップロード等のエラーが蓄積される。
  */
 export async function transformContentData(
   serviceId: string,
@@ -14,6 +12,7 @@ export async function transformContentData(
   fields: PreviewField[],
   rawData: Record<string, unknown>,
   mediaCache: Map<string, MediaRef>,
+  errors: string[],
 ): Promise<Record<string, unknown>> {
   const result: Record<string, unknown> = {};
 
@@ -29,6 +28,7 @@ export async function transformContentData(
       field,
       value,
       mediaCache,
+      errors,
     );
   }
 
@@ -41,6 +41,7 @@ async function transformField(
   field: PreviewField,
   value: unknown,
   mediaCache: Map<string, MediaRef>,
+  errors: string[],
 ): Promise<unknown> {
   switch (field.mycmsKind) {
     case "text":
@@ -55,13 +56,13 @@ async function transformField(
       return transformSelect(field, value);
 
     case "media":
-      return transformMedia(serviceId, dbServiceId, value, mediaCache);
+      return transformMedia(serviceId, dbServiceId, value, mediaCache, errors);
 
     case "mediaList":
-      return transformMediaList(serviceId, dbServiceId, value, mediaCache);
+      return transformMediaList(serviceId, dbServiceId, value, mediaCache, errors);
 
     case "repeater":
-      return transformRepeater(serviceId, dbServiceId, field, value, mediaCache);
+      return transformRepeater(serviceId, dbServiceId, field, value, mediaCache, errors);
 
     case "relation":
     case "relationList":
@@ -88,21 +89,22 @@ async function transformMedia(
   dbServiceId: string,
   value: unknown,
   mediaCache: Map<string, MediaRef>,
+  errors: string[],
 ): Promise<MediaRef | null> {
   if (!value || typeof value !== "object") {
-    mediaErrors.push(`not object: ${JSON.stringify(value)?.slice(0, 80)}`);
+    errors.push(`not object: ${JSON.stringify(value)?.slice(0, 80)}`);
     return null;
   }
 
   const mediaObj = value as { url?: string };
   if (!mediaObj.url) {
-    mediaErrors.push(`no url: ${JSON.stringify(value)?.slice(0, 80)}`);
+    errors.push(`no url: ${JSON.stringify(value)?.slice(0, 80)}`);
     return null;
   }
 
   const result: MediaUploadResult = await uploadMicrocmsMedia(serviceId, dbServiceId, mediaObj.url, mediaCache);
   if (result.error) {
-    mediaErrors.push(`upload err: ${result.error} (url=${mediaObj.url.slice(0, 60)})`);
+    errors.push(`upload: ${result.error} (${mediaObj.url.slice(0, 60)})`);
   }
   return result.ref;
 }
@@ -112,12 +114,13 @@ async function transformMediaList(
   dbServiceId: string,
   value: unknown,
   mediaCache: Map<string, MediaRef>,
+  errors: string[],
 ): Promise<MediaRef[]> {
   if (!Array.isArray(value)) return [];
 
   const results: MediaRef[] = [];
   for (const item of value) {
-    const ref = await transformMedia(serviceId, dbServiceId, item, mediaCache);
+    const ref = await transformMedia(serviceId, dbServiceId, item, mediaCache, errors);
     if (ref) results.push(ref);
   }
   return results;
@@ -129,6 +132,7 @@ async function transformRepeater(
   field: PreviewField,
   value: unknown,
   mediaCache: Map<string, MediaRef>,
+  errors: string[],
 ): Promise<Record<string, unknown>[]> {
   if (!Array.isArray(value)) return [];
 
@@ -142,13 +146,13 @@ async function transformRepeater(
   for (const item of value) {
     if (!item || typeof item !== "object") continue;
     const raw = item as Record<string, unknown>;
-    // fieldId を除去して子フィールドを再帰変換
     const transformed = await transformContentData(
       serviceId,
       dbServiceId,
       subFieldDefs,
       raw,
       mediaCache,
+      errors,
     );
     results.push(transformed);
   }
