@@ -7,13 +7,18 @@ import { useCallback, useMemo, useState } from "react";
 import { Button } from "@/shared/ui/button";
 
 import { ContentFilters } from "./content-filters";
-import { ContentTable, type ContentRow } from "./content-table";
+import {
+  ContentTable,
+  type ContentRow,
+  type DisplayColumn,
+} from "./content-table";
 
 interface ContentListProps {
   serviceId: string;
   apiId: string;
   schemaName: string;
   contents: ContentRow[];
+  columns: DisplayColumn[];
   onDelete: (id: string) => void;
   headerAction?: React.ReactNode;
 }
@@ -25,6 +30,7 @@ export function ContentList({
   apiId,
   schemaName,
   contents,
+  columns,
   onDelete,
   headerAction,
 }: ContentListProps) {
@@ -36,8 +42,13 @@ export function ContentList({
   const filteredContents = useMemo(() => {
     return contents.filter((c) => {
       if (statusFilter !== "all" && c.status !== statusFilter) return false;
-      if (search && !c.title.toLowerCase().includes(search.toLowerCase()))
-        return false;
+      if (search) {
+        const values = Object.values(c.data)
+          .map((v) => (typeof v === "string" ? v : ""))
+          .join(" ")
+          .toLowerCase();
+        if (!values.includes(search.toLowerCase())) return false;
+      }
       return true;
     });
   }, [contents, search, statusFilter]);
@@ -106,6 +117,7 @@ export function ContentList({
       ) : (
         <ContentTable
           rows={pagedContents}
+          columns={columns}
           serviceId={serviceId}
           apiId={apiId}
           selectedIds={selectedIds}

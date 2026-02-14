@@ -7,7 +7,10 @@ import Link from "next/link";
 import { toast } from "sonner";
 
 import { ContentList } from "@/features/content-hub/browse-contents/components/content-list";
-import type { ContentRow } from "@/features/content-hub/browse-contents/components/content-table";
+import type {
+  ContentRow,
+  DisplayColumn,
+} from "@/features/content-hub/browse-contents/components/content-table";
 import { deleteContent } from "@/features/content-hub/manage-content/action";
 import { Button } from "@/shared/ui/button";
 
@@ -24,6 +27,7 @@ interface ContentListWrapperProps {
   apiId: string;
   schemaName: string;
   contents: ContentRow[];
+  columns: DisplayColumn[];
   apiInfo: ApiInfo;
 }
 
@@ -32,6 +36,7 @@ export function ContentListWrapper({
   apiId,
   schemaName,
   contents,
+  columns,
   apiInfo,
 }: ContentListWrapperProps) {
   const router = useRouter();
@@ -55,6 +60,7 @@ export function ContentListWrapper({
           apiId={apiId}
           schemaName={schemaName}
           contents={contents}
+          columns={columns}
           onDelete={handleDelete}
           headerAction={
             <div className="flex gap-2">

@@ -1,7 +1,10 @@
 import { notFound } from "next/navigation";
 import { getApiSchema } from "@/features/content-hub/manage-schema/query";
 import { listContents } from "@/features/content-hub/browse-contents/query";
-import type { ContentRow } from "@/features/content-hub/browse-contents/components/content-table";
+import {
+  buildDisplayColumns,
+  type ContentRow,
+} from "@/features/content-hub/browse-contents/components/content-table";
 
 import { ContentListWrapper } from "./content-list-wrapper";
 
@@ -25,7 +28,7 @@ export default async function ApiContentListPage({
 
   const contents: ContentRow[] = result.contents.map((c) => ({
     id: c.id,
-    title: (c.data as Record<string, unknown>)?.title as string ?? (c.draftData as Record<string, unknown>)?.title as string ?? c.id,
+    data: (c.data as Record<string, unknown>) ?? (c.draftData as Record<string, unknown>) ?? {},
     status: c.status,
     updatedAt: c.updatedAt.toISOString(),
   }));
@@ -40,6 +43,8 @@ export default async function ApiContentListPage({
     })),
   };
 
+  const columns = buildDisplayColumns(apiInfo.fields);
+
   return (
     <div className="p-6">
       <ContentListWrapper
@@ -47,6 +52,7 @@ export default async function ApiContentListPage({
         apiId={apiId}
         schemaName={schema.name}
         contents={contents}
+        columns={columns}
         apiInfo={apiInfo}
       />
     </div>
