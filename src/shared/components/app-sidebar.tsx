@@ -22,7 +22,7 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-  SidebarRail,
+  SidebarTrigger,
 } from "@/shared/ui/sidebar";
 import { UserMenu } from "@/infrastructure/auth/user-menu";
 
@@ -128,8 +128,8 @@ export function AppSidebar() {
       </SidebarContent>
       <SidebarFooter>
         <UserMenu />
+        <SidebarTrigger className="w-full" />
       </SidebarFooter>
-      <SidebarRail />
     </Sidebar>
   );
 }
