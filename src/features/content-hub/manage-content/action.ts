@@ -3,6 +3,7 @@
 import { db } from "@/db";
 import { contents } from "@/db/schema";
 import type { ActionResult } from "@/shared/types";
+import { requirePermission } from "@/shared/lib/auth-guard";
 import { eq } from "drizzle-orm";
 
 import { recordVersion } from "../content-versions/action";
@@ -16,8 +17,10 @@ export async function createContent(
 ): Promise<ActionResult<Content>> {
   try {
     const parsed = createContentSchema.parse(input);
-    const now = new Date();
 
+    await requirePermission(parsed.serviceId, "content.create");
+
+    const now = new Date();
     const isPublished = parsed.status === "published";
 
     const [content] = await db
@@ -77,6 +80,10 @@ export async function updateContent(
       return { success: false, error: "コンテンツが見つかりません" };
     }
 
+    const e = existing as Content;
+
+    await requirePermission(e.serviceId, "content.update");
+
     const isPublishing = parsed.status === "published";
 
     const updateValues: Record<string, unknown> = {
@@ -87,8 +94,8 @@ export async function updateContent(
       updateValues.data = parsed.data;
       updateValues.draftData = null;
       updateValues.status = "published";
-      updateValues.publishedAt = (existing as Content).publishedAt ?? now;
-      updateValues.revisedAt = (existing as Content).publishedAt ? now : null;
+      updateValues.publishedAt = e.publishedAt ?? now;
+      updateValues.revisedAt = e.publishedAt ? now : null;
     } else {
       updateValues.draftData = parsed.data;
       if (parsed.status) {
@@ -134,21 +141,26 @@ export async function deleteContent(
   id: string,
 ): Promise<ActionResult> {
   try {
-    const [content] = await db
-      .delete(contents)
-      .where(eq(contents.id, id))
-      .returning();
+    // 権限チェックのため先にコンテンツを取得
+    const [existing] = await db
+      .select()
+      .from(contents)
+      .where(eq(contents.id, id));
 
-    if (!content) {
+    if (!existing) {
       return { success: false, error: "コンテンツが見つかりません" };
     }
 
-    const c = content as Content;
+    const e = existing as Content;
+
+    await requirePermission(e.serviceId, "content.delete");
+
+    await db.delete(contents).where(eq(contents.id, id));
 
     // Webhook 送信
-    void dispatchToAllWebhooks(c.serviceId, "content.deleted", {
-      contentId: c.id,
-      apiSchemaId: c.apiSchemaId,
+    void dispatchToAllWebhooks(e.serviceId, "content.deleted", {
+      contentId: e.id,
+      apiSchemaId: e.apiSchemaId,
     });
 
     return { success: true, data: undefined };
@@ -174,6 +186,9 @@ export async function publishContent(
     }
 
     const e = existing as Content;
+
+    await requirePermission(e.serviceId, "content.publish");
+
     const publishData = e.draftData ?? e.data;
 
     if (!publishData) {

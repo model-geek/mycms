@@ -4,7 +4,13 @@ import type { ComponentType } from "react";
 
 import { BooleanField } from "./boolean-field";
 import { DateField } from "./date-field";
+import { MediaField } from "./media-field";
+import { MediaListField } from "./media-list-field";
 import { NumberField } from "./number-field";
+import { RelationField } from "./relation-field";
+import { RelationListField } from "./relation-list-field";
+import { RepeaterField } from "./repeater-field";
+import { RichEditorField } from "./rich-editor-field";
 import { SelectField } from "./select-field";
 import { TextField } from "./text-field";
 import { TextareaField } from "./textarea-field";
@@ -18,10 +24,16 @@ export const FIELD_RENDERERS: Record<
 > = {
   text: TextField,
   textArea: TextareaField,
+  richText: RichEditorField,
   boolean: BooleanField,
   number: NumberField,
   select: SelectField,
   date: DateField,
+  relation: RelationField,
+  relationList: RelationListField,
+  repeater: RepeaterField,
+  media: MediaField,
+  mediaList: MediaListField,
 };
 
 export function FieldRenderer({ field, control }: FieldRendererProps) {
