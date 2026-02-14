@@ -30,6 +30,9 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  SidebarMenuSub,
+  SidebarMenuSubButton,
+  SidebarMenuSubItem,
   useSidebar,
 } from "@/shared/ui/sidebar";
 import {
@@ -43,11 +46,7 @@ import {
 import { UserMenu } from "@/infrastructure/auth/user-menu";
 
 type SidebarService = { id: string; name: string };
-
-const contentItems = [
-  { title: "API", icon: FileText, segment: "apis" },
-  { title: "メディア", icon: Image, segment: "media" },
-];
+type SidebarApi = { id: string; name: string; endpoint: string };
 
 const settingsItems = [
   { title: "APIキー", icon: Key, segment: "api-keys" },
@@ -61,12 +60,19 @@ function extractServiceId(pathname: string): string | undefined {
   return match?.[1];
 }
 
-export function AppSidebar({ services }: { services: SidebarService[] }) {
+export function AppSidebar({
+  services,
+  apisByService = {},
+}: {
+  services: SidebarService[];
+  apisByService?: Record<string, SidebarApi[]>;
+}) {
   const pathname = usePathname();
   const serviceId = extractServiceId(pathname);
 
   const basePath = serviceId ? `/services/${serviceId}` : "";
   const currentService = services.find((s) => s.id === serviceId);
+  const apis = serviceId ? (apisByService[serviceId] ?? []) : [];
 
   return (
     <Sidebar collapsible="icon">
@@ -83,24 +89,50 @@ export function AppSidebar({ services }: { services: SidebarService[] }) {
               <SidebarGroupLabel>コンテンツ</SidebarGroupLabel>
               <SidebarGroupContent>
                 <SidebarMenu>
-                  {contentItems.map((item) => {
-                    const href = `${basePath}/${item.segment}`;
-                    const isActive = pathname.startsWith(href);
-                    return (
-                      <SidebarMenuItem key={item.segment}>
-                        <SidebarMenuButton
-                          asChild
-                          isActive={isActive}
-                          tooltip={item.title}
-                        >
-                          <Link href={href}>
-                            <item.icon />
-                            <span>{item.title}</span>
-                          </Link>
-                        </SidebarMenuButton>
-                      </SidebarMenuItem>
-                    );
-                  })}
+                  <SidebarMenuItem>
+                    <SidebarMenuButton
+                      asChild
+                      isActive={pathname === `${basePath}/apis` || pathname === `${basePath}/apis/new`}
+                      tooltip="API"
+                    >
+                      <Link href={`${basePath}/apis`}>
+                        <FileText />
+                        <span>API</span>
+                      </Link>
+                    </SidebarMenuButton>
+                    {apis.length > 0 && (
+                      <SidebarMenuSub>
+                        {apis.map((api) => {
+                          const apiHref = `${basePath}/apis/${api.id}`;
+                          const isActive = pathname.startsWith(apiHref);
+                          return (
+                            <SidebarMenuSubItem key={api.id}>
+                              <SidebarMenuSubButton
+                                asChild
+                                isActive={isActive}
+                              >
+                                <Link href={apiHref}>
+                                  <span>{api.name}</span>
+                                </Link>
+                              </SidebarMenuSubButton>
+                            </SidebarMenuSubItem>
+                          );
+                        })}
+                      </SidebarMenuSub>
+                    )}
+                  </SidebarMenuItem>
+                  <SidebarMenuItem>
+                    <SidebarMenuButton
+                      asChild
+                      isActive={pathname.startsWith(`${basePath}/media`)}
+                      tooltip="メディア"
+                    >
+                      <Link href={`${basePath}/media`}>
+                        <Image />
+                        <span>メディア</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
                 </SidebarMenu>
               </SidebarGroupContent>
             </SidebarGroup>
