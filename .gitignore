@@ -53,3 +53,5 @@ main/
 .env
 .env.local
 .env.*.local
+.env*.local
+.env.production

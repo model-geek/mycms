@@ -3,6 +3,9 @@
  * @remarks 各 feature の schema/ ディレクトリから段階的に追加する
  */
 
+// Auth (BetterAuth)
+export * from "@/infrastructure/auth/auth-schema";
+
 // Infrastructure
 export * from "@/infrastructure/services/schema/services";
 
