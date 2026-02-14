@@ -39,6 +39,7 @@ const fieldSchema = z.object({
   required: z.boolean(),
   description: z.string().optional(),
   selectOptions: z.string().optional(),
+  multipleSelect: z.boolean().optional(),
 });
 
 type FieldFormValues = z.infer<typeof fieldSchema>;
@@ -66,12 +67,13 @@ export function FieldEditor({
   initialData,
   onSave,
 }: FieldEditorProps) {
-  const existingOptions =
+  const existingRules =
     initialData?.kind === "select"
-      ? ((
-          initialData.validationRules as { options?: string[] } | null
-        )?.options?.join("\n") ?? "")
-      : "";
+      ? (initialData.validationRules as {
+          options?: string[];
+          multipleSelect?: boolean;
+        } | null)
+      : null;
 
   const form = useForm<FieldFormValues>({
     resolver: zodResolver(fieldSchema),
@@ -81,7 +83,8 @@ export function FieldEditor({
       kind: initialData?.kind ?? "text",
       required: initialData?.required ?? false,
       description: initialData?.description ?? "",
-      selectOptions: existingOptions,
+      selectOptions: existingRules?.options?.join("\n") ?? "",
+      multipleSelect: existingRules?.multipleSelect ?? false,
     },
   });
 
@@ -103,6 +106,7 @@ export function FieldEditor({
           .split("\n")
           .map((s) => s.trim())
           .filter(Boolean),
+        ...(values.multipleSelect ? { multipleSelect: true } : {}),
       };
     }
 
@@ -200,23 +204,40 @@ export function FieldEditor({
             />
 
             {selectedKind === "select" && (
-              <FormField
-                control={form.control}
-                name="selectOptions"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>選択肢（改行区切り）</FormLabel>
-                    <FormControl>
-                      <Textarea
-                        {...field}
-                        placeholder={"オプション1\nオプション2\nオプション3"}
-                        rows={4}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              <>
+                <FormField
+                  control={form.control}
+                  name="selectOptions"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>選択肢（改行区切り）</FormLabel>
+                      <FormControl>
+                        <Textarea
+                          {...field}
+                          placeholder={"オプション1\nオプション2\nオプション3"}
+                          rows={4}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="multipleSelect"
+                  render={({ field }) => (
+                    <FormItem className="flex items-center justify-between rounded-lg border p-3">
+                      <FormLabel>複数選択</FormLabel>
+                      <FormControl>
+                        <Switch
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                        />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+              </>
             )}
 
             <SheetFooter>

@@ -7,7 +7,7 @@ import { toast } from "sonner";
 import { Dialog, DialogContent } from "@/shared/ui/dialog";
 
 import { fetchMicrocmsSchemas, executeMigration } from "../action";
-import type { MigrationPreview } from "../types";
+import type { MigrationPreview, MigrationResult } from "../types";
 
 import { StepCredentials } from "./step-credentials";
 import { StepPreview } from "./step-preview";
@@ -24,13 +24,14 @@ export function MigrateDialog({ open, onOpenChange }: MigrateDialogProps) {
   const router = useRouter();
   const [step, setStep] = useState<Step>("credentials");
   const [preview, setPreview] = useState<MigrationPreview | null>(null);
-  const [serviceId, setServiceId] = useState<string | null>(null);
+  const [migrationResult, setMigrationResult] =
+    useState<MigrationResult | null>(null);
   const [isPending, startTransition] = useTransition();
 
   const reset = useCallback(() => {
     setStep("credentials");
     setPreview(null);
-    setServiceId(null);
+    setMigrationResult(null);
   }, []);
 
   function handleOpenChange(value: boolean) {
@@ -44,6 +45,7 @@ export function MigrateDialog({ open, onOpenChange }: MigrateDialogProps) {
     endpoints: string;
     serviceName: string;
     serviceSlug: string;
+    includeContent: boolean;
   }) {
     startTransition(async () => {
       const result = await fetchMicrocmsSchemas(values);
@@ -61,7 +63,7 @@ export function MigrateDialog({ open, onOpenChange }: MigrateDialogProps) {
     startTransition(async () => {
       const result = await executeMigration(preview);
       if (result.success) {
-        setServiceId(result.data.serviceId);
+        setMigrationResult(result.data);
         setStep("result");
         toast.success("移行が完了しました");
         router.refresh();
@@ -85,9 +87,9 @@ export function MigrateDialog({ open, onOpenChange }: MigrateDialogProps) {
             onBack={() => setStep("credentials")}
           />
         )}
-        {step === "result" && serviceId && preview && (
+        {step === "result" && migrationResult && preview && (
           <StepResult
-            serviceId={serviceId}
+            result={migrationResult}
             serviceName={preview.serviceName}
             onClose={() => handleOpenChange(false)}
           />

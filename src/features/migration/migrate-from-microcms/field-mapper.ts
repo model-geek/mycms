@@ -75,10 +75,11 @@ export function mapMicrocmsField(
   let subFields: PreviewField[] | undefined;
   let warning: string | undefined;
 
-  // select → options
+  // select → options (microCMS select は常に複数選択)
   if (field.kind === "select" && field.selectItems) {
     validationRules = {
       options: field.selectItems.map((item) => item.value),
+      multipleSelect: true,
     };
   }
 

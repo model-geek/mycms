@@ -44,10 +44,20 @@ export interface PreviewSchema {
   type: "list" | "object";
   fields: PreviewField[];
   error?: string;
+  contentCount?: number;
 }
 
 export interface MigrationPreview {
   serviceName: string;
   serviceSlug: string;
   schemas: PreviewSchema[];
+  includeContent?: boolean;
+  microcmsServiceId?: string;
+  microcmsApiKey?: string;
+}
+
+export interface MigrationResult {
+  serviceId: string;
+  contentCount: number;
+  mediaCount: number;
 }

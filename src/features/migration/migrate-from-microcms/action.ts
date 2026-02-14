@@ -1,14 +1,24 @@
 "use server";
 
 import { db } from "@/db";
-import { services, members, apiSchemas, schemaFields } from "@/db/schema";
+import {
+  services,
+  members,
+  apiSchemas,
+  schemaFields,
+  contents,
+  contentVersions,
+} from "@/db/schema";
 import { requireAuth } from "@/shared/lib/auth-guard";
 import type { ActionResult } from "@/shared/types";
 
+import { transformContentData } from "./content-transformer";
 import { buildCrewMap, mapMicrocmsField } from "./field-mapper";
+import type { MediaRef } from "./media-uploader";
 import type {
   MicrocmsApiResponse,
   MigrationPreview,
+  MigrationResult,
   PreviewSchema,
 } from "./types";
 import { migrationCredentialsSchema } from "./validations";
@@ -55,11 +65,21 @@ export async function fetchMicrocmsSchemas(
         mapMicrocmsField(f, crewMap),
       );
 
+      let contentCount: number | undefined;
+      if (parsed.includeContent) {
+        contentCount = await fetchContentCount(
+          parsed.serviceId,
+          parsed.apiKey,
+          endpoint,
+        );
+      }
+
       schemas.push({
         endpoint,
         name: endpoint,
         type: "list",
         fields,
+        contentCount,
       });
     }
 
@@ -69,6 +89,11 @@ export async function fetchMicrocmsSchemas(
         serviceName: parsed.serviceName,
         serviceSlug: parsed.serviceSlug,
         schemas,
+        includeContent: parsed.includeContent,
+        microcmsServiceId: parsed.includeContent
+          ? parsed.serviceId
+          : undefined,
+        microcmsApiKey: parsed.includeContent ? parsed.apiKey : undefined,
       },
     };
   } catch (error) {
@@ -82,9 +107,27 @@ export async function fetchMicrocmsSchemas(
   }
 }
 
+async function fetchContentCount(
+  serviceId: string,
+  apiKey: string,
+  endpoint: string,
+): Promise<number> {
+  try {
+    const url = `https://${serviceId}.microcms.io/api/v1/${endpoint}?limit=0`;
+    const res = await fetch(url, {
+      headers: { "X-MICROCMS-API-KEY": apiKey },
+    });
+    if (!res.ok) return 0;
+    const data = (await res.json()) as { totalCount?: number };
+    return data.totalCount ?? 0;
+  } catch {
+    return 0;
+  }
+}
+
 export async function executeMigration(
   preview: MigrationPreview,
-): Promise<ActionResult<{ serviceId: string }>> {
+): Promise<ActionResult<MigrationResult>> {
   try {
     const session = await requireAuth();
 
@@ -96,8 +139,8 @@ export async function executeMigration(
       };
     }
 
-    const result = await db.transaction(async (tx) => {
-      // 1. サービス作成
+    // 1. スキーマ移行（トランザクション内）
+    const schemaResult = await db.transaction(async (tx) => {
       const [service] = await tx
         .insert(services)
         .values({
@@ -107,14 +150,14 @@ export async function executeMigration(
         })
         .returning();
 
-      // 2. オーナーをメンバー登録
       await tx.insert(members).values({
         serviceId: service.id,
         userId: session.user.id,
         role: "owner",
       });
 
-      // 3. API スキーマ + フィールド作成
+      const schemaMap: Map<string, { schemaId: string; fields: typeof validSchemas[0]["fields"] }> = new Map();
+
       for (const schema of validSchemas) {
         const [apiSchema] = await tx
           .insert(apiSchemas)
@@ -144,12 +187,74 @@ export async function executeMigration(
             })),
           );
         }
+
+        schemaMap.set(schema.endpoint, {
+          schemaId: apiSchema.id,
+          fields: schema.fields,
+        });
       }
 
-      return { serviceId: service.id };
+      return { serviceId: service.id, schemaMap };
     });
 
-    return { success: true, data: result };
+    // 2. コンテンツ移行（トランザクション外 - メディアアップロードはロールバック不可）
+    let contentCount = 0;
+    const mediaCache = new Map<string, MediaRef>();
+
+    if (
+      preview.includeContent &&
+      preview.microcmsServiceId &&
+      preview.microcmsApiKey
+    ) {
+      for (const schema of validSchemas) {
+        const schemaInfo = schemaResult.schemaMap.get(schema.endpoint);
+        if (!schemaInfo) continue;
+
+        const allContents = await fetchAllContents(
+          preview.microcmsServiceId,
+          preview.microcmsApiKey,
+          schema.endpoint,
+        );
+
+        for (const rawContent of allContents) {
+          const transformedData = await transformContentData(
+            preview.microcmsServiceId,
+            schemaResult.serviceId,
+            schemaInfo.fields,
+            rawContent as Record<string, unknown>,
+            mediaCache,
+          );
+
+          const [inserted] = await db
+            .insert(contents)
+            .values({
+              apiSchemaId: schemaInfo.schemaId,
+              serviceId: schemaResult.serviceId,
+              data: transformedData,
+              status: "published",
+              publishedAt: new Date(),
+            })
+            .returning({ id: contents.id });
+
+          await db.insert(contentVersions).values({
+            contentId: inserted.id,
+            data: transformedData,
+            version: 1,
+          });
+
+          contentCount++;
+        }
+      }
+    }
+
+    return {
+      success: true,
+      data: {
+        serviceId: schemaResult.serviceId,
+        contentCount,
+        mediaCount: mediaCache.size,
+      },
+    };
   } catch (error) {
     if (error instanceof Error) {
       if (error.message.includes("unique")) {
@@ -162,4 +267,36 @@ export async function executeMigration(
     }
     return { success: false, error: "移行の実行に失敗しました" };
   }
+}
+
+async function fetchAllContents(
+  serviceId: string,
+  apiKey: string,
+  endpoint: string,
+): Promise<unknown[]> {
+  const allContents: unknown[] = [];
+  const limit = 100;
+  let offset = 0;
+
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+  while (true) {
+    const url = `https://${serviceId}.microcms.io/api/v1/${endpoint}?limit=${limit}&offset=${offset}`;
+    const res = await fetch(url, {
+      headers: { "X-MICROCMS-API-KEY": apiKey },
+    });
+
+    if (!res.ok) break;
+
+    const data = (await res.json()) as {
+      contents?: unknown[];
+      totalCount?: number;
+    };
+    const items = data.contents ?? [];
+    allContents.push(...items);
+
+    if (allContents.length >= (data.totalCount ?? 0)) break;
+    offset += limit;
+  }
+
+  return allContents;
 }

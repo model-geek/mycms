@@ -25,6 +25,7 @@ export const migrationCredentialsSchema = z.object({
       /^[a-z0-9-]+$/,
       "スラッグは英小文字・数字・ハイフンのみ使用できます",
     ),
+  includeContent: z.boolean().optional().default(false),
 });
 
 export type MigrationCredentialsInput = z.infer<typeof migrationCredentialsSchema>;

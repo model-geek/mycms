@@ -4,7 +4,9 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/shared/ui/button";
+import { Checkbox } from "@/shared/ui/checkbox";
 import { Input } from "@/shared/ui/input";
+import { Label } from "@/shared/ui/label";
 import { Textarea } from "@/shared/ui/textarea";
 import {
   Form,
@@ -38,6 +40,7 @@ const credentialsFormSchema = z.object({
       /^[a-z0-9-]+$/,
       "スラッグは英小文字・数字・ハイフンのみ使用できます",
     ),
+  includeContent: z.boolean(),
 });
 
 type CredentialsFormValues = z.infer<typeof credentialsFormSchema>;
@@ -56,6 +59,7 @@ export function StepCredentials({ isPending, onSubmit }: StepCredentialsProps) {
       endpoints: "",
       serviceName: "",
       serviceSlug: "",
+      includeContent: false,
     },
   });
 
@@ -150,6 +154,22 @@ export function StepCredentials({ isPending, onSubmit }: StepCredentialsProps) {
               )}
             />
           </div>
+          <FormField
+            control={form.control}
+            name="includeContent"
+            render={({ field }) => (
+              <div className="flex items-center gap-2 rounded-lg border p-3">
+                <Checkbox
+                  id="includeContent"
+                  checked={field.value}
+                  onCheckedChange={field.onChange}
+                />
+                <Label htmlFor="includeContent" className="text-sm font-normal">
+                  コンテンツも移行する（画像は Vercel Blob にアップロードされます）
+                </Label>
+              </div>
+            )}
+          />
           <DialogFooter>
             <Button type="submit" disabled={isPending}>
               {isPending ? "取得中..." : "スキーマを取得"}

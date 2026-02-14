@@ -2,6 +2,7 @@
 
 import type { Control, FieldValues } from "react-hook-form";
 
+import { Checkbox } from "@/shared/ui/checkbox";
 import {
   FormControl,
   FormField,
@@ -9,6 +10,7 @@ import {
   FormLabel,
   FormMessage,
 } from "@/shared/ui/form";
+import { Label } from "@/shared/ui/label";
 import {
   Select,
   SelectContent,
@@ -25,8 +27,62 @@ interface SelectFieldProps {
 }
 
 export function SelectField({ field, control }: SelectFieldProps) {
-  const options =
-    (field.validationRules as { options?: string[] } | null)?.options ?? [];
+  const rules = field.validationRules as {
+    options?: string[];
+    multipleSelect?: boolean;
+  } | null;
+  const options = rules?.options ?? [];
+  const isMultiple = rules?.multipleSelect === true;
+
+  if (isMultiple) {
+    return (
+      <FormField
+        control={control}
+        name={field.fieldId}
+        render={({ field: formField }) => {
+          const selected: string[] = Array.isArray(formField.value)
+            ? formField.value
+            : [];
+
+          function toggle(option: string) {
+            const next = selected.includes(option)
+              ? selected.filter((v) => v !== option)
+              : [...selected, option];
+            formField.onChange(next);
+          }
+
+          return (
+            <FormItem>
+              <FormLabel>
+                {field.name}
+                {field.required && (
+                  <span className="text-destructive ml-1">*</span>
+                )}
+              </FormLabel>
+              <div className="space-y-2">
+                {options.map((option) => (
+                  <div key={option} className="flex items-center gap-2">
+                    <Checkbox
+                      id={`${field.fieldId}-${option}`}
+                      checked={selected.includes(option)}
+                      onCheckedChange={() => toggle(option)}
+                    />
+                    <Label
+                      htmlFor={`${field.fieldId}-${option}`}
+                      className="text-sm font-normal"
+                    >
+                      {option}
+                    </Label>
+                  </div>
+                ))}
+              </div>
+              <FormMessage />
+            </FormItem>
+          );
+        }}
+      />
+    );
+  }
 
   return (
     <FormField

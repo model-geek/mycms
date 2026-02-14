@@ -10,14 +10,16 @@ import {
   DialogTitle,
 } from "@/shared/ui/dialog";
 
+import type { MigrationResult } from "../types";
+
 interface StepResultProps {
-  serviceId: string;
+  result: MigrationResult;
   serviceName: string;
   onClose: () => void;
 }
 
 export function StepResult({
-  serviceId,
+  result,
   serviceName,
   onClose,
 }: StepResultProps) {
@@ -26,7 +28,7 @@ export function StepResult({
       <DialogHeader>
         <DialogTitle>移行完了</DialogTitle>
         <DialogDescription>
-          microCMS からのスキーマ移行が完了しました
+          microCMS からの移行が完了しました
         </DialogDescription>
       </DialogHeader>
       <div className="flex flex-col items-center gap-3 py-6">
@@ -34,13 +36,23 @@ export function StepResult({
         <p className="text-sm text-muted-foreground">
           サービス「{serviceName}」が正常に作成されました
         </p>
+        {(result.contentCount > 0 || result.mediaCount > 0) && (
+          <div className="text-sm text-muted-foreground space-y-1 text-center">
+            {result.contentCount > 0 && (
+              <p>{result.contentCount} 件のコンテンツを移行しました</p>
+            )}
+            {result.mediaCount > 0 && (
+              <p>{result.mediaCount} 件のメディアをアップロードしました</p>
+            )}
+          </div>
+        )}
       </div>
       <DialogFooter className="gap-2 sm:gap-0">
         <Button variant="outline" onClick={onClose}>
           閉じる
         </Button>
         <Button asChild>
-          <Link href={`/services/${serviceId}`}>サービスを開く</Link>
+          <Link href={`/services/${result.serviceId}`}>サービスを開く</Link>
         </Button>
       </DialogFooter>
     </>

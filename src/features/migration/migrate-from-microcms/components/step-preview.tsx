@@ -34,6 +34,10 @@ export function StepPreview({
     (sum, s) => sum + s.fields.filter((f) => f.mycmsKind === null).length,
     0,
   );
+  const totalContents = validSchemas.reduce(
+    (sum, s) => sum + (s.contentCount ?? 0),
+    0,
+  );
 
   return (
     <>
@@ -55,6 +59,12 @@ export function StepPreview({
               </span>
             )}
           </p>
+          {preview.includeContent && totalContents > 0 && (
+            <p className="mt-1">
+              <strong>{totalContents} 件のコンテンツ</strong>
+              も移行されます（メディアは Vercel Blob にアップロード）
+            </p>
+          )}
         </div>
 
         {preview.schemas.map((schema) => (
@@ -142,6 +152,11 @@ function SchemaCard({ schema }: { schema: PreviewSchema }) {
       <div className="flex items-center gap-2">
         <span className="text-sm font-medium">{schema.endpoint}</span>
         <Badge variant="secondary">{schema.type}</Badge>
+        {schema.contentCount != null && schema.contentCount > 0 && (
+          <Badge variant="outline" className="text-xs">
+            {schema.contentCount} 件
+          </Badge>
+        )}
       </div>
       {schema.fields.length === 0 ? (
         <p className="mt-2 text-sm text-muted-foreground">
