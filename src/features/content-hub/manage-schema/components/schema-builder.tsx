@@ -18,6 +18,8 @@ import {
   FieldEditor,
   type FieldEditorData,
 } from "./field-editor";
+import { SchemaExportButton } from "./schema-export-button";
+import { SchemaImportDialog } from "./schema-import-dialog";
 import {
   SortableFieldList,
   type FieldItem,
@@ -32,6 +34,7 @@ interface SchemaBuilderProps {
   apiSchemaId?: string;
   apiSchemas?: ApiSchema[];
   customFields?: CustomField[];
+  onImported?: () => void;
 }
 
 export function SchemaBuilder({
@@ -43,6 +46,7 @@ export function SchemaBuilder({
   apiSchemaId,
   apiSchemas,
   customFields,
+  onImported,
 }: SchemaBuilderProps) {
   const [fields, setFields] = useState<FieldItem[]>(initialFields);
   const [editingField, setEditingField] = useState<FieldEditorData | null>(
@@ -126,6 +130,20 @@ export function SchemaBuilder({
                 </CardDescription>
               </div>
               <div className="flex gap-2">
+                {apiSchemaId && serviceId && (
+                  <>
+                    <SchemaImportDialog
+                      apiSchemaId={apiSchemaId}
+                      serviceId={serviceId}
+                      onImported={onImported}
+                    />
+                    <SchemaExportButton
+                      apiSchemaId={apiSchemaId}
+                      serviceId={serviceId}
+                      schemaName={schemaName}
+                    />
+                  </>
+                )}
                 <Button variant="outline" onClick={handleAddField}>
                   <Plus className="size-4" />
                   フィールドを追加

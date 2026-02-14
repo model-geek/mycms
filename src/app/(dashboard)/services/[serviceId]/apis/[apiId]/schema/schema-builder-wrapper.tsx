@@ -103,6 +103,10 @@ export function SchemaBuilderWrapper({
     });
   }
 
+  function handleImported() {
+    router.refresh();
+  }
+
   return (
     <SchemaBuilder
       schemaName={schemaName}
@@ -113,6 +117,7 @@ export function SchemaBuilderWrapper({
       apiSchemaId={apiId}
       apiSchemas={apiSchemas}
       customFields={customFields}
+      onImported={handleImported}
     />
   );
 }
