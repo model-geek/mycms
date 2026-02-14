@@ -48,7 +48,7 @@ npm install
 cp .env.example .env.local
 ```
 
-Edit `.env.local`:
+Edit `.env.local` with the values obtained below:
 ```
 DATABASE_URL="postgresql://postgres:postgres@127.0.0.1:54322/postgres"
 BETTER_AUTH_SECRET="your-secret-here"
@@ -56,6 +56,45 @@ BETTER_AUTH_URL="http://localhost:3000"
 BLOB_READ_WRITE_TOKEN="your-vercel-blob-token"
 NEXT_PUBLIC_APP_URL="http://localhost:3000"
 ```
+
+#### `DATABASE_URL` の取得
+
+**Supabase Cloud の場合:**
+1. [supabase.com](https://supabase.com) でプロジェクトを作成
+2. **Project Settings → Database → Connection string** を開く
+3. **Transaction Pooling** (ポート `6543`) の接続文字列をコピー
+4. `[YOUR-PASSWORD]` をプロジェクト作成時に設定した DB パスワードに置き換える
+
+```
+postgresql://postgres.[project-ref]:[password]@aws-0-[region].pooler.supabase.com:6543/postgres
+```
+
+**Supabase CLI (ローカル開発) の場合:**
+```bash
+npx supabase start
+```
+デフォルトの接続文字列: `postgresql://postgres:postgres@127.0.0.1:54322/postgres`
+
+#### `BETTER_AUTH_SECRET` の生成
+
+セッション暗号化用のランダムな秘密鍵です。以下のコマンドで生成してください:
+
+```bash
+openssl rand -base64 32
+```
+
+32文字以上のランダム文字列であれば何でも使えます。本番環境では必ずユニークな値を設定してください。
+
+#### `BLOB_READ_WRITE_TOKEN` の取得
+
+メディアアップロードに Vercel Blob を使用します。
+
+1. [Vercel](https://vercel.com) にプロジェクトをデプロイ (または Vercel CLI でリンク)
+2. **Storage → Create → Blob Store** で Blob ストアを作成
+3. Blob ストアをプロジェクトに接続すると `BLOB_READ_WRITE_TOKEN` が自動で環境変数に追加される
+4. ローカル開発用には **Settings → Environment Variables** からトークンをコピーして `.env.local` に貼り付ける
+
+> **Note:** メディア機能を使わない場合は空文字のままでも起動できます。
 
 ### 3. Database Setup
 
@@ -138,16 +177,22 @@ category[equals]news[or]category[equals]blog
 
 1. Click the "Deploy with Vercel" button above
 2. Set environment variables:
-   - `DATABASE_URL` - Supabase connection string (Transaction Pooling mode)
-   - `BETTER_AUTH_SECRET` - Random secret for auth
-   - `BLOB_READ_WRITE_TOKEN` - Vercel Blob store token
+   - `DATABASE_URL` — Supabase の接続文字列 (Transaction Pooling モード, ポート `6543`)。取得方法は [上記](#database_url-の取得) を参照
+   - `BETTER_AUTH_SECRET` — `openssl rand -base64 32` で生成したランダム文字列
+   - `BLOB_READ_WRITE_TOKEN` — Vercel Blob ストアを作成すると自動設定される。デプロイ後に **Storage → Create → Blob Store** で作成・接続
 3. Deploy!
+4. デプロイ後、Supabase のマイグレーションを実行:
+   ```bash
+   # ローカルからリモート DB にマイグレーション適用
+   npm run db:migrate
+   ```
 
 ### Supabase Setup
 
-1. Create a Supabase project at [supabase.com](https://supabase.com)
-2. Get the connection string from Settings → Database → Connection string (Transaction pooling)
-3. Run migrations: `npm run db:migrate`
+1. [supabase.com](https://supabase.com) でプロジェクトを作成
+2. **Project Settings → Database → Connection string** から Transaction Pooling の接続文字列を取得
+3. Vercel の環境変数に `DATABASE_URL` として設定
+4. マイグレーションを実行: `npm run db:migrate`
 
 ## Architecture
 
