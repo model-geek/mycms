@@ -62,3 +62,34 @@ export interface MigrationResult {
   mediaCount: number;
   debugInfo?: string;
 }
+
+/** スキーマ移行結果（Phase 1） */
+export interface SchemaMigrationResult {
+  serviceId: string;
+  schemas: {
+    endpoint: string;
+    schemaId: string;
+    fields: PreviewField[];
+    contentCount: number;
+  }[];
+}
+
+/** コンテンツバッチ移行パラメータ */
+export interface ContentBatchParams {
+  microcmsServiceId: string;
+  microcmsApiKey: string;
+  dbServiceId: string;
+  endpoint: string;
+  schemaId: string;
+  fields: PreviewField[];
+  offset: number;
+  limit: number;
+}
+
+/** コンテンツバッチ移行結果 */
+export interface ContentBatchResult {
+  migrated: number;
+  mediaCount: number;
+  totalCount: number;
+  debugInfo?: string;
+}
