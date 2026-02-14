@@ -188,6 +188,7 @@ export function FieldEditor({
                     <FieldTypePicker
                       value={field.value}
                       onChange={field.onChange}
+                      disabled={!!initialData?.id}
                     />
                   </FormControl>
                   <FormMessage />

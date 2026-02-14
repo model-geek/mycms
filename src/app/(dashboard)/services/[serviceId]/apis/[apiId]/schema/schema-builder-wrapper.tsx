@@ -58,12 +58,19 @@ export function SchemaBuilderWrapper({
             existing.kind !== field.kind ||
             existing.required !== field.required
           ) {
-            await updateSchemaField(field.id, {
-              name: field.name,
-              fieldId: field.fieldId,
-              kind: field.kind,
-              required: field.required ?? false,
-            });
+            const oldFieldId = existing.fieldId !== field.fieldId
+              ? existing.fieldId
+              : undefined;
+            await updateSchemaField(
+              field.id,
+              {
+                name: field.name,
+                fieldId: field.fieldId,
+                kind: field.kind,
+                required: field.required ?? false,
+              },
+              oldFieldId,
+            );
           }
         }
 

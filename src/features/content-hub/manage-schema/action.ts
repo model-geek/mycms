@@ -1,7 +1,7 @@
 "use server";
 
 import { db } from "@/db";
-import { apiSchemas, schemaFields } from "@/db/schema";
+import { apiSchemas, contents, schemaFields } from "@/db/schema";
 import type { ActionResult } from "@/shared/types";
 import { requirePermission } from "@/shared/lib/auth-guard";
 import { eq, sql } from "drizzle-orm";
@@ -154,9 +154,26 @@ export async function createSchemaField(
 export async function updateSchemaField(
   id: string,
   input: unknown,
+  oldFieldId?: string,
 ): Promise<ActionResult<SchemaField>> {
   try {
     const parsed = updateSchemaFieldSchema.parse(input);
+
+    // fieldId が変更された場合、既存コンテンツの JSONB キーをリネーム
+    if (oldFieldId && parsed.fieldId && oldFieldId !== parsed.fieldId) {
+      const [existing] = await db
+        .select({ apiSchemaId: schemaFields.apiSchemaId })
+        .from(schemaFields)
+        .where(eq(schemaFields.id, id));
+
+      if (existing) {
+        await renameFieldInContents(
+          existing.apiSchemaId,
+          oldFieldId,
+          parsed.fieldId,
+        );
+      }
+    }
 
     const [field] = await db
       .update(schemaFields)
@@ -175,6 +192,31 @@ export async function updateSchemaField(
     }
     return { success: false, error: "フィールドの更新に失敗しました" };
   }
+}
+
+/**
+ * コンテンツの JSONB data/draftData 内のフィールドキーをリネームする。
+ * PostgreSQL の jsonb 演算子で一括更新。
+ */
+async function renameFieldInContents(
+  apiSchemaId: string,
+  oldKey: string,
+  newKey: string,
+) {
+  // data カラム: oldKey が存在する行のみ更新
+  await db.execute(sql`
+    UPDATE content_hub.contents
+    SET data = (data - ${oldKey}) || jsonb_build_object(${newKey}, data->${oldKey})
+    WHERE api_schema_id = ${apiSchemaId}
+      AND data ? ${oldKey}
+  `);
+  // draftData カラム
+  await db.execute(sql`
+    UPDATE content_hub.contents
+    SET draft_data = (draft_data - ${oldKey}) || jsonb_build_object(${newKey}, draft_data->${oldKey})
+    WHERE api_schema_id = ${apiSchemaId}
+      AND draft_data ? ${oldKey}
+  `);
 }
 
 export async function deleteSchemaField(

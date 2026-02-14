@@ -31,11 +31,12 @@ export type FieldKind = keyof typeof FIELD_TYPES;
 interface FieldTypePickerProps {
   value: string;
   onChange: (value: string) => void;
+  disabled?: boolean;
 }
 
-export function FieldTypePicker({ value, onChange }: FieldTypePickerProps) {
+export function FieldTypePicker({ value, onChange, disabled }: FieldTypePickerProps) {
   return (
-    <Select value={value} onValueChange={onChange}>
+    <Select value={value} onValueChange={onChange} disabled={disabled}>
       <SelectTrigger className="w-full">
         <SelectValue placeholder="フィールドの型を選択" />
       </SelectTrigger>
