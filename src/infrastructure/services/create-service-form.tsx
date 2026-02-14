@@ -16,6 +16,8 @@ import {
   FormLabel,
   FormMessage,
 } from "@/shared/ui/form";
+import { createService } from "./action";
+import { toast } from "sonner";
 
 const createServiceSchema = z.object({
   name: z.string().min(1, "サービス名を入力してください"),
@@ -49,10 +51,14 @@ export function CreateServiceForm({
   });
 
   async function onSubmit(values: CreateServiceValues) {
-    void values;
     setIsPending(true);
     try {
-      // TODO: Call server action to create service
+      const result = await createService(values);
+      if (!result.success) {
+        toast.error(result.error);
+        return;
+      }
+      toast.success("サービスを作成しました");
       onSuccess?.();
       router.refresh();
     } finally {
