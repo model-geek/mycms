@@ -28,15 +28,41 @@ const WARNINGS: Record<string, string> = {
   relationList: "リレーション先は移行後に手動で設定してください",
 };
 
-/** customFieldCrewId → MicrocmsCustomField のマップを構築 */
+/**
+ * customFields を検索用マップに変換する。
+ * microCMS は customFieldCrewId または createdAt で紐付けるため両方をキーにする。
+ */
 export function buildCrewMap(
   customFields: MicrocmsCustomField[],
 ): Map<string, MicrocmsCustomField> {
   const map = new Map<string, MicrocmsCustomField>();
   for (const cf of customFields) {
-    map.set(cf.customFieldCrewId, cf);
+    if (cf.customFieldCrewId) {
+      map.set(cf.customFieldCrewId, cf);
+    }
+    map.set(cf.createdAt, cf);
   }
   return map;
+}
+
+/**
+ * repeater/custom フィールドから紐付く customField を探す。
+ * customFieldCrewId があればそれで、なければ customFieldCreatedAtList で検索。
+ */
+function resolveCrewFields(
+  field: MicrocmsApiField,
+  crewMap: Map<string, MicrocmsCustomField>,
+): MicrocmsCustomField | undefined {
+  if (field.customFieldCrewId) {
+    return crewMap.get(field.customFieldCrewId);
+  }
+  if (field.customFieldCreatedAtList) {
+    for (const ts of field.customFieldCreatedAtList) {
+      const crew = crewMap.get(ts);
+      if (crew) return crew;
+    }
+  }
+  return undefined;
 }
 
 export function mapMicrocmsField(
@@ -59,10 +85,9 @@ export function mapMicrocmsField(
   // repeater / custom → 子フィールド解決
   if (
     (field.kind === "repeater" || field.kind === "custom") &&
-    field.customFieldCrewId &&
     crewMap
   ) {
-    const crew = crewMap.get(field.customFieldCrewId);
+    const crew = resolveCrewFields(field, crewMap);
     if (crew && crew.fields.length > 0) {
       subFields = crew.fields.map((child) => mapMicrocmsField(child, crewMap));
       const mappable = subFields.filter((sf) => sf.mycmsKind !== null);

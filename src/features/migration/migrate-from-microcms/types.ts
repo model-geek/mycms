@@ -9,13 +9,15 @@ export interface MicrocmsApiField {
   description?: string;
   selectItems?: { value: string }[];
   customFieldCrewId?: string;
+  customFieldCreatedAtList?: string[];
 }
 
 export interface MicrocmsCustomField {
+  createdAt: string;
   fieldId: string;
   name: string;
   fields: MicrocmsApiField[];
-  customFieldCrewId: string;
+  customFieldCrewId?: string;
 }
 
 export interface MicrocmsApiResponse {
