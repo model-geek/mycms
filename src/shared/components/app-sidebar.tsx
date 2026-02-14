@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useTheme } from "next-themes";
 import {
   FileText,
@@ -15,6 +15,9 @@ import {
   Sun,
   PanelLeftClose,
   PanelLeftOpen,
+  ChevronsUpDown,
+  Check,
+  ArrowLeftRight,
 } from "lucide-react";
 import {
   Sidebar,
@@ -29,7 +32,17 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@/shared/ui/sidebar";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/shared/ui/dropdown-menu";
 import { UserMenu } from "@/infrastructure/auth/user-menu";
+
+type SidebarService = { id: string; name: string };
 
 const contentItems = [
   { title: "API", icon: FileText, segment: "apis" },
@@ -48,32 +61,20 @@ function extractServiceId(pathname: string): string | undefined {
   return match?.[1];
 }
 
-export function AppSidebar() {
+export function AppSidebar({ services }: { services: SidebarService[] }) {
   const pathname = usePathname();
   const serviceId = extractServiceId(pathname);
 
   const basePath = serviceId ? `/services/${serviceId}` : "";
+  const currentService = services.find((s) => s.id === serviceId);
 
   return (
     <Sidebar collapsible="icon">
       <SidebarHeader>
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <SidebarMenuButton size="lg" asChild>
-              <Link href="/services">
-                <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-                  <LayoutDashboard className="size-4" />
-                </div>
-                <div className="grid flex-1 text-left text-sm leading-tight">
-                  <span className="truncate font-semibold">mycms</span>
-                  <span className="truncate text-xs text-muted-foreground">
-                    Headless CMS
-                  </span>
-                </div>
-              </Link>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-        </SidebarMenu>
+        <ServiceSwitcher
+          services={services}
+          currentService={currentService}
+        />
       </SidebarHeader>
       <SidebarContent>
         {serviceId && (
@@ -143,6 +144,81 @@ export function AppSidebar() {
         </SidebarMenu>
       </SidebarFooter>
     </Sidebar>
+  );
+}
+
+function ServiceSwitcher({
+  services,
+  currentService,
+}: {
+  services: SidebarService[];
+  currentService: SidebarService | undefined;
+}) {
+  const router = useRouter();
+  const { isMobile } = useSidebar();
+
+  return (
+    <SidebarMenu>
+      <SidebarMenuItem>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <SidebarMenuButton
+              size="lg"
+              className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
+              tooltip={currentService?.name ?? "サービス一覧"}
+            >
+              <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+                <LayoutDashboard className="size-4" />
+              </div>
+              <div className="grid flex-1 text-left text-sm leading-tight">
+                <span className="truncate font-semibold">
+                  {currentService?.name ?? "mycms"}
+                </span>
+                <span className="truncate text-xs text-muted-foreground">
+                  {currentService ? "サービス" : "Headless CMS"}
+                </span>
+              </div>
+              <ChevronsUpDown className="ml-auto" />
+            </SidebarMenuButton>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent
+            className="w-[--radix-dropdown-menu-trigger-width] min-w-56 rounded-lg"
+            align="start"
+            side={isMobile ? "bottom" : "right"}
+            sideOffset={4}
+          >
+            <DropdownMenuLabel className="text-xs text-muted-foreground">
+              サービス
+            </DropdownMenuLabel>
+            {services.map((service) => (
+              <DropdownMenuItem
+                key={service.id}
+                onClick={() => router.push(`/services/${service.id}/apis`)}
+                className="gap-2 p-2"
+              >
+                <div className="flex size-6 items-center justify-center rounded-sm border">
+                  <LayoutDashboard className="size-4 shrink-0" />
+                </div>
+                <span className="truncate">{service.name}</span>
+                {service.id === currentService?.id && (
+                  <Check className="ml-auto size-4" />
+                )}
+              </DropdownMenuItem>
+            ))}
+            <DropdownMenuSeparator />
+            <DropdownMenuItem
+              onClick={() => router.push("/services")}
+              className="gap-2 p-2"
+            >
+              <div className="flex size-6 items-center justify-center rounded-sm border bg-background">
+                <ArrowLeftRight className="size-4" />
+              </div>
+              <span className="text-muted-foreground">サービス一覧</span>
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </SidebarMenuItem>
+    </SidebarMenu>
   );
 }
 
