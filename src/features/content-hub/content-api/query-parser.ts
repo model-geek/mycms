@@ -1,5 +1,6 @@
 import { DEFAULT_LIST_LIMIT, MAX_LIST_LIMIT } from "../constants";
 
+import { parseFilters } from "./filter-parser";
 import type { ContentApiQuery } from "./model";
 
 export function parseContentApiQuery(
@@ -11,6 +12,7 @@ export function parseContentApiQuery(
   const fieldsParam = searchParams.get("fields");
   const q = searchParams.get("q") ?? undefined;
   const idsParam = searchParams.get("ids");
+  const filtersParam = searchParams.get("filters");
   const depthParam = searchParams.get("depth");
   const draftKey = searchParams.get("draftKey") ?? undefined;
 
@@ -30,9 +32,13 @@ export function parseContentApiQuery(
     ? idsParam.split(",").map((id) => id.trim()).filter(Boolean)
     : undefined;
 
+  const filters = filtersParam
+    ? parseFilters(filtersParam)
+    : undefined;
+
   const depth = depthParam
     ? Math.max(parseInt(depthParam, 10) || 1, 1)
     : undefined;
 
-  return { limit, offset, orders, fields, q, ids, depth, draftKey };
+  return { limit, offset, orders, fields, q, ids, filters, depth, draftKey };
 }

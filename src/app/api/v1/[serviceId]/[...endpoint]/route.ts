@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
 import {
+  authenticateRequest,
   handleListContents,
   handleGetContent,
   handleCreateContent,
@@ -17,6 +18,10 @@ export async function GET(
 ) {
   try {
     const { serviceId, endpoint } = await params;
+
+    const authError = await authenticateRequest(request, serviceId);
+    if (authError) return authError;
+
     const endpointSlug = endpoint[0];
     const contentId = endpoint[1];
     const query = parseContentApiQuery(request.nextUrl.searchParams);
@@ -38,6 +43,10 @@ export async function POST(
 ) {
   try {
     const { serviceId, endpoint } = await params;
+
+    const authError = await authenticateRequest(request, serviceId);
+    if (authError) return authError;
+
     const endpointSlug = endpoint[0];
     const body = await request.json();
 
@@ -54,6 +63,10 @@ export async function PUT(
 ) {
   try {
     const { serviceId, endpoint } = await params;
+
+    const authError = await authenticateRequest(request, serviceId);
+    if (authError) return authError;
+
     const endpointSlug = endpoint[0];
     const contentId = endpoint[1];
 
@@ -75,6 +88,10 @@ export async function PATCH(
 ) {
   try {
     const { serviceId, endpoint } = await params;
+
+    const authError = await authenticateRequest(request, serviceId);
+    if (authError) return authError;
+
     const endpointSlug = endpoint[0];
     const contentId = endpoint[1];
 
@@ -96,6 +113,10 @@ export async function DELETE(
 ) {
   try {
     const { serviceId, endpoint } = await params;
+
+    const authError = await authenticateRequest(request, serviceId);
+    if (authError) return authError;
+
     const endpointSlug = endpoint[0];
     const contentId = endpoint[1];
 

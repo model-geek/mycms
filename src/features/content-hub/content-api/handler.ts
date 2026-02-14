@@ -1,15 +1,36 @@
 import { db } from "@/db";
 import { apiSchemas, contents } from "@/db/schema";
-import { eq, and, desc, asc, count, sql, inArray } from "drizzle-orm";
+import { validateApiKey } from "@/features/api-keys/validate-key/middleware";
+import { eq, and, desc, asc, count, sql, inArray, type SQL } from "drizzle-orm";
 import { NextResponse } from "next/server";
 
 import type { Content } from "../model";
 
+import { buildFilterSql } from "./filter-parser";
 import type { ContentApiQuery, ContentListApiResponse } from "./model";
 import { serializeContent, serializeContentWithDraft } from "./serializer";
 
 function errorResponse(message: string, status: number) {
   return NextResponse.json({ message }, { status });
+}
+
+export async function authenticateRequest(
+  request: { headers: { get(name: string): string | null } },
+  serviceId: string,
+): Promise<NextResponse | null> {
+  const apiKey = request.headers.get("X-MYCMS-API-KEY");
+
+  if (!apiKey) {
+    return errorResponse("APIキーが必要です", 401);
+  }
+
+  const result = await validateApiKey(apiKey, serviceId);
+
+  if (!result.valid) {
+    return errorResponse("無効なAPIキーです", 403);
+  }
+
+  return null;
 }
 
 async function resolveSchema(serviceId: string, endpointSlug: string) {
@@ -58,7 +79,7 @@ export async function handleListContents(
     return errorResponse("このAPIはリスト型ではありません", 400);
   }
 
-  const conditions = [
+  const conditions: (SQL | undefined)[] = [
     eq(contents.apiSchemaId, schema.id),
     eq(contents.serviceId, serviceId),
     eq(contents.status, "published"),
@@ -70,6 +91,13 @@ export async function handleListContents(
 
   if (query.q) {
     conditions.push(sql`${contents.data}::text ILIKE ${"%" + query.q + "%"}`);
+  }
+
+  if (query.filters && query.filters.length > 0) {
+    const filterSql = buildFilterSql(query.filters);
+    if (filterSql) {
+      conditions.push(filterSql);
+    }
   }
 
   const where = and(...conditions);

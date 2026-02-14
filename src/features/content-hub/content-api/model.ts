@@ -1,3 +1,5 @@
+import type { FilterGroup } from "./filter-parser";
+
 /** Content API のクエリパラメータ */
 export interface ContentApiQuery {
   limit: number;
@@ -6,6 +8,7 @@ export interface ContentApiQuery {
   fields?: string[];
   q?: string;
   ids?: string[];
+  filters?: FilterGroup[];
   depth?: number;
   draftKey?: string;
 }
