@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm, useWatch } from "react-hook-form";
 import { z } from "zod";
@@ -87,6 +88,27 @@ export function FieldEditor({
       multipleSelect: existingRules?.multipleSelect ?? false,
     },
   });
+
+  useEffect(() => {
+    if (open) {
+      const rules =
+        initialData?.kind === "select"
+          ? (initialData.validationRules as {
+              options?: string[];
+              multipleSelect?: boolean;
+            } | null)
+          : null;
+      form.reset({
+        name: initialData?.name ?? "",
+        fieldId: initialData?.fieldId ?? "",
+        kind: initialData?.kind ?? "text",
+        required: initialData?.required ?? false,
+        description: initialData?.description ?? "",
+        selectOptions: rules?.options?.join("\n") ?? "",
+        multipleSelect: rules?.multipleSelect ?? false,
+      });
+    }
+  }, [open, initialData, form]);
 
   const selectedKind = useWatch({ control: form.control, name: "kind" });
 
