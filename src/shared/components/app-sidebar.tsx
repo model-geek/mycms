@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useTheme } from "next-themes";
 import {
   FileText,
   Image,
@@ -10,6 +11,8 @@ import {
   Users,
   Settings,
   LayoutDashboard,
+  Moon,
+  Sun,
 } from "lucide-react";
 import {
   Sidebar,
@@ -128,8 +131,25 @@ export function AppSidebar() {
       </SidebarContent>
       <SidebarFooter>
         <UserMenu />
-        <SidebarTrigger className="w-full" />
+        <div className="flex items-center gap-1">
+          <ThemeToggle />
+          <SidebarTrigger className="flex-1" />
+        </div>
       </SidebarFooter>
     </Sidebar>
+  );
+}
+
+function ThemeToggle() {
+  const { setTheme, resolvedTheme } = useTheme();
+
+  return (
+    <SidebarMenuButton
+      tooltip={resolvedTheme === "dark" ? "ライトモード" : "ダークモード"}
+      onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}
+    >
+      <Sun className="size-4 dark:hidden" />
+      <Moon className="hidden size-4 dark:block" />
+    </SidebarMenuButton>
   );
 }
