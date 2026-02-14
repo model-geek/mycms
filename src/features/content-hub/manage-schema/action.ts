@@ -3,6 +3,7 @@
 import { db } from "@/db";
 import { apiSchemas, schemaFields } from "@/db/schema";
 import type { ActionResult } from "@/shared/types";
+import { requirePermission } from "@/shared/lib/auth-guard";
 import { eq, sql } from "drizzle-orm";
 
 import type { ApiSchema, SchemaField } from "../model";
@@ -20,6 +21,8 @@ export async function createApiSchema(
 ): Promise<ActionResult<ApiSchema>> {
   try {
     const parsed = createApiSchemaSchema.parse(input);
+
+    await requirePermission(parsed.serviceId, "schema.create");
 
     const [schema] = await db
       .insert(apiSchemas)
@@ -47,6 +50,18 @@ export async function updateApiSchema(
   try {
     const parsed = updateApiSchemaSchema.parse(input);
 
+    // スキーマから serviceId を取得して権限チェック
+    const [existing] = await db
+      .select({ serviceId: apiSchemas.serviceId })
+      .from(apiSchemas)
+      .where(eq(apiSchemas.id, id));
+
+    if (!existing) {
+      return { success: false, error: "APIスキーマが見つかりません" };
+    }
+
+    await requirePermission(existing.serviceId, "schema.update");
+
     const [schema] = await db
       .update(apiSchemas)
       .set({ ...parsed, updatedAt: new Date() })
@@ -70,6 +85,18 @@ export async function deleteApiSchema(
   id: string,
 ): Promise<ActionResult> {
   try {
+    // スキーマから serviceId を取得して権限チェック
+    const [existing] = await db
+      .select({ serviceId: apiSchemas.serviceId })
+      .from(apiSchemas)
+      .where(eq(apiSchemas.id, id));
+
+    if (!existing) {
+      return { success: false, error: "APIスキーマが見つかりません" };
+    }
+
+    await requirePermission(existing.serviceId, "schema.delete");
+
     const [schema] = await db
       .delete(apiSchemas)
       .where(eq(apiSchemas.id, id))

@@ -1,29 +1,19 @@
 "use server";
 
 import { db } from "@/db";
-import { services } from "@/db/schema";
-import { eq, and } from "drizzle-orm";
+import { services, members } from "@/db/schema";
+import { eq } from "drizzle-orm";
+import { requireAuth, requirePermission } from "@/shared/lib/auth-guard";
 import { createServiceSchema, updateServiceSchema } from "./validations";
 import type { ActionResult } from "@/shared/types";
 import type { Service } from "./model";
-
-// Note: Once BetterAuth is fully configured, replace getSessionUserId()
-// with actual auth check from @/infrastructure/auth/auth-server
-
-async function getSessionUserId(): Promise<string> {
-  // TODO: Replace with BetterAuth session check
-  // const session = await auth.api.getSession({ headers: await headers() });
-  // if (!session) throw new UnauthorizedError();
-  // return session.user.id;
-  throw new Error("Auth not configured yet");
-}
 
 export async function createService(
   input: unknown,
 ): Promise<ActionResult<Service>> {
   try {
     const parsed = createServiceSchema.parse(input);
-    const userId = await getSessionUserId();
+    const session = await requireAuth();
 
     const [service] = await db
       .insert(services)
@@ -31,9 +21,16 @@ export async function createService(
         name: parsed.name,
         slug: parsed.slug,
         description: parsed.description ?? null,
-        ownerId: userId,
+        ownerId: session.user.id,
       })
       .returning();
+
+    // オーナーをメンバーとして自動登録
+    await db.insert(members).values({
+      serviceId: service.id,
+      userId: session.user.id,
+      role: "owner",
+    });
 
     return { success: true, data: service as Service };
   } catch (error) {
@@ -50,12 +47,13 @@ export async function updateService(
 ): Promise<ActionResult<Service>> {
   try {
     const parsed = updateServiceSchema.parse(input);
-    const userId = await getSessionUserId();
+
+    await requirePermission(id, "service.update");
 
     const [service] = await db
       .update(services)
       .set({ ...parsed, updatedAt: new Date() })
-      .where(and(eq(services.id, id), eq(services.ownerId, userId)))
+      .where(eq(services.id, id))
       .returning();
 
     if (!service) {
@@ -73,11 +71,11 @@ export async function updateService(
 
 export async function deleteService(id: string): Promise<ActionResult> {
   try {
-    const userId = await getSessionUserId();
+    await requirePermission(id, "service.delete");
 
     const [service] = await db
       .delete(services)
-      .where(and(eq(services.id, id), eq(services.ownerId, userId)))
+      .where(eq(services.id, id))
       .returning();
 
     if (!service) {
