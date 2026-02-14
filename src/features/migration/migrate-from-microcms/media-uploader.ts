@@ -29,11 +29,14 @@ export async function uploadMicrocmsMedia(
     const buffer = Buffer.from(await res.arrayBuffer());
     const contentType = res.headers.get("content-type") ?? "image/jpeg";
 
-    // URL からファイル名を取得
+    // URL からファイル名と UUID を取得（重複回避）
     const urlPath = new URL(imageUrl).pathname;
-    const fileName = urlPath.split("/").pop() ?? "image";
+    const segments = urlPath.split("/").filter(Boolean);
+    const fileName = segments.pop() ?? "image";
+    // microCMS URL: /assets/{projectId}/{assetUuid}/{fileName}
+    const assetUuid = segments.pop() ?? crypto.randomUUID();
 
-    const blobPath = `${serviceId}/${fileName}`;
+    const blobPath = `${serviceId}/${assetUuid}-${fileName}`;
     const blob = await put(blobPath, buffer, {
       access: "public",
       contentType,
@@ -58,7 +61,8 @@ export async function uploadMicrocmsMedia(
     };
     mediaCache.set(imageUrl, ref);
     return ref;
-  } catch {
+  } catch (err) {
+    console.error(`[media-uploader] Failed to upload ${imageUrl}:`, err);
     return null;
   }
 }
