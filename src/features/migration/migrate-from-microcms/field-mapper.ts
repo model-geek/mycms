@@ -9,8 +9,8 @@ import type {
 const KIND_MAP: Record<string, FieldKind> = {
   text: "text",
   textArea: "textArea",
-  richEditor: "richEditor",
-  richEditorV2: "richEditor",
+  richEditor: "richEditorV2",
+  richEditorV2: "richEditorV2",
   media: "media",
   mediaList: "mediaList",
   date: "date",
@@ -96,6 +96,7 @@ export function mapMicrocmsField(
         subFields: mappable.map((sf) => ({
           fieldId: sf.fieldId,
           name: sf.name,
+          kind: sf.mycmsKind,
           mycmsKind: sf.mycmsKind,
           microcmsKind: sf.microcmsKind,
           required: sf.required,

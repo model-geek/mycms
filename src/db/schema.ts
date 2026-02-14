@@ -14,6 +14,7 @@ export * from "@/features/content-hub/schema/api-schemas";
 export * from "@/features/content-hub/schema/schema-fields";
 export * from "@/features/content-hub/schema/contents";
 export * from "@/features/content-hub/schema/content-versions";
+export * from "@/features/content-hub/schema/custom-fields";
 export * from "@/features/content-hub/schema/relations";
 
 // Media

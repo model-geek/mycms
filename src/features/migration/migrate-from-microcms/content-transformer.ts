@@ -46,7 +46,7 @@ async function transformField(
   switch (field.mycmsKind) {
     case "text":
     case "textArea":
-    case "richEditor":
+    case "richEditorV2":
     case "number":
     case "boolean":
     case "date":

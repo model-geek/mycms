@@ -22,8 +22,12 @@ function fieldKindToExample(kind: string): unknown {
     case "textArea":
     case "select":
       return "string";
-    case "richEditor":
+    case "richEditorV2":
       return "<p>HTML content</p>";
+    case "file":
+      return { url: "https://...", fileSize: 1024 };
+    case "iframe":
+      return "https://example.com";
     case "number":
       return 0;
     case "boolean":

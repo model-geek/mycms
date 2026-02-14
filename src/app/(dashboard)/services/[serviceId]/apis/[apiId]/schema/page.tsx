@@ -23,6 +23,7 @@ export default async function SchemaPage({
     fieldId: f.fieldId,
     kind: f.kind,
     required: f.required,
+    validationRules: f.validationRules,
   }));
 
   return (

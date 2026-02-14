@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Code2, Settings2 } from "lucide-react";
+import { Code2, Puzzle, Settings2 } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
 
@@ -70,6 +70,14 @@ export function ContentListWrapper({
                 >
                   <Settings2 className="size-4" />
                   スキーマ編集
+                </Link>
+              </Button>
+              <Button variant="outline" size="sm" asChild>
+                <Link
+                  href={`/services/${serviceId}/apis/${apiId}/custom-fields`}
+                >
+                  <Puzzle className="size-4" />
+                  カスタムフィールド
                 </Link>
               </Button>
               <Button

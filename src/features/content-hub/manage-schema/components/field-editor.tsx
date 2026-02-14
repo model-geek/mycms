@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm, useWatch } from "react-hook-form";
 import { z } from "zod";
@@ -25,6 +26,7 @@ import { Switch } from "@/shared/ui/switch";
 import { Textarea } from "@/shared/ui/textarea";
 
 import { FieldTypePicker } from "./field-type-picker";
+import { SubFieldEditor, type SubFieldDef } from "./sub-field-editor";
 
 const fieldSchema = z.object({
   name: z.string().min(1, "表示名は必須です"),
@@ -61,19 +63,45 @@ interface FieldEditorProps {
   onSave: (data: FieldEditorData) => void;
 }
 
+interface RepeaterRules {
+  subFields?: SubFieldDef[];
+}
+
+interface SelectRules {
+  options?: string[];
+  multipleSelect?: boolean;
+}
+
+function parseSubFields(data: FieldEditorData | null | undefined): SubFieldDef[] {
+  if (!data || data.kind !== "repeater") return [];
+  const rules = data.validationRules as RepeaterRules | null;
+  return (rules?.subFields ?? []).map((sf) => ({
+    id: sf.id ?? sf.fieldId,
+    fieldId: sf.fieldId,
+    name: sf.name,
+    kind: sf.kind ?? ((sf as unknown as Record<string, unknown>).mycmsKind as string) ?? "text",
+    required: sf.required ?? false,
+    description: sf.description,
+    validationRules: sf.validationRules,
+  }));
+}
+
+function parseSelectRules(data: FieldEditorData | null | undefined): SelectRules | null {
+  if (!data || data.kind !== "select") return null;
+  return data.validationRules as SelectRules | null;
+}
+
 export function FieldEditor({
   open,
   onOpenChange,
   initialData,
   onSave,
 }: FieldEditorProps) {
-  const existingRules =
-    initialData?.kind === "select"
-      ? (initialData.validationRules as {
-          options?: string[];
-          multipleSelect?: boolean;
-        } | null)
-      : null;
+  const selectRules = parseSelectRules(initialData);
+
+  const [subFields, setSubFields] = useState<SubFieldDef[]>(() =>
+    parseSubFields(initialData),
+  );
 
   const form = useForm<FieldFormValues>({
     resolver: zodResolver(fieldSchema),
@@ -83,10 +111,26 @@ export function FieldEditor({
       kind: initialData?.kind ?? "text",
       required: initialData?.required ?? false,
       description: initialData?.description ?? "",
-      selectOptions: existingRules?.options?.join("\n") ?? "",
-      multipleSelect: existingRules?.multipleSelect ?? false,
+      selectOptions: selectRules?.options?.join("\n") ?? "",
+      multipleSelect: selectRules?.multipleSelect ?? false,
     },
   });
+
+  useEffect(() => {
+    if (open) {
+      const rules = parseSelectRules(initialData);
+      form.reset({
+        name: initialData?.name ?? "",
+        fieldId: initialData?.fieldId ?? "",
+        kind: initialData?.kind ?? "text",
+        required: initialData?.required ?? false,
+        description: initialData?.description ?? "",
+        selectOptions: rules?.options?.join("\n") ?? "",
+        multipleSelect: rules?.multipleSelect ?? false,
+      });
+      setSubFields(parseSubFields(initialData));
+    }
+  }, [open, initialData, form]);
 
   const selectedKind = useWatch({ control: form.control, name: "kind" });
 
@@ -107,6 +151,19 @@ export function FieldEditor({
           .map((s) => s.trim())
           .filter(Boolean),
         ...(values.multipleSelect ? { multipleSelect: true } : {}),
+      };
+    }
+
+    if (values.kind === "repeater") {
+      data.validationRules = {
+        subFields: subFields.map((sf) => ({
+          fieldId: sf.fieldId,
+          name: sf.name,
+          kind: sf.kind,
+          required: sf.required ?? false,
+          description: sf.description,
+          validationRules: sf.validationRules,
+        })),
       };
     }
 
@@ -166,6 +223,7 @@ export function FieldEditor({
                     <FieldTypePicker
                       value={field.value}
                       onChange={field.onChange}
+                      disabled={!!initialData?.id}
                     />
                   </FormControl>
                   <FormMessage />
@@ -238,6 +296,13 @@ export function FieldEditor({
                   )}
                 />
               </>
+            )}
+
+            {selectedKind === "repeater" && (
+              <SubFieldEditor
+                subFields={subFields}
+                onChange={setSubFields}
+              />
             )}
 
             <SheetFooter>

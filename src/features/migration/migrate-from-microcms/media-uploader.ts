@@ -45,6 +45,7 @@ export async function uploadMicrocmsMedia(
     const blob = await put(blobPath, buffer, {
       access: "public",
       contentType,
+      addRandomSuffix: true,
     });
 
     const [inserted] = await db

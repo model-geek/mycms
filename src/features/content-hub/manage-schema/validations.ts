@@ -66,6 +66,15 @@ export const updateSchemaFieldSchema = z.object({
     .min(1, "フィールド名は必須です")
     .max(100, "フィールド名は100文字以内です")
     .optional(),
+  fieldId: z
+    .string()
+    .min(1, "フィールドIDは必須です")
+    .max(50, "フィールドIDは50文字以内です")
+    .regex(
+      /^[a-zA-Z][a-zA-Z0-9_]*$/,
+      "フィールドIDは英字で始まり、英数字とアンダースコアのみ使用できます",
+    )
+    .optional(),
   kind: z
     .enum(FIELD_KINDS as [string, ...string[]], {
       error: "無効なフィールドタイプです",

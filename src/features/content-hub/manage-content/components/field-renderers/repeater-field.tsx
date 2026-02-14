@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback } from "react";
+import { useCallback, useMemo } from "react";
 import type { Control, FieldValues } from "react-hook-form";
 import { useFieldArray, useFormContext } from "react-hook-form";
 import {
@@ -31,7 +31,18 @@ import {
   FormMessage,
 } from "@/shared/ui/form";
 
+import { FieldRenderer } from "./index";
 import type { SchemaFieldDef } from "./types";
+
+interface SubFieldDef {
+  fieldId: string;
+  name: string;
+  kind?: string;
+  mycmsKind?: string;
+  required?: boolean;
+  description?: string | null;
+  validationRules?: unknown;
+}
 
 interface RepeaterFieldProps {
   field: SchemaFieldDef;
@@ -101,6 +112,22 @@ export function RepeaterField({ field, control }: RepeaterFieldProps) {
     name: field.fieldId,
   });
 
+  const subFields = useMemo(() => {
+    const rules = field.validationRules as {
+      subFields?: SubFieldDef[];
+    } | null;
+    return (rules?.subFields ?? []).map((sf) => ({
+      id: sf.fieldId,
+      fieldId: sf.fieldId,
+      name: sf.name,
+      kind: sf.kind ?? sf.mycmsKind ?? "text",
+      required: sf.required ?? false,
+      description: sf.description ?? null,
+      position: 0,
+      validationRules: sf.validationRules,
+    })) satisfies SchemaFieldDef[];
+  }, [field.validationRules]);
+
   const sensors = useSensors(
     useSensor(PointerSensor),
     useSensor(KeyboardSensor, {
@@ -124,8 +151,12 @@ export function RepeaterField({ field, control }: RepeaterFieldProps) {
   );
 
   const handleAdd = useCallback(() => {
-    append({});
-  }, [append]);
+    const defaults: Record<string, unknown> = {};
+    for (const sf of subFields) {
+      defaults[sf.fieldId] = sf.kind === "boolean" ? false : sf.kind === "number" ? null : "";
+    }
+    append(defaults);
+  }, [append, subFields]);
 
   return (
     <FormField
@@ -156,9 +187,22 @@ export function RepeaterField({ field, control }: RepeaterFieldProps) {
                     index={index}
                     onRemove={remove}
                   >
-                    <div className="text-muted-foreground text-sm">
-                      項目 {index + 1}
-                    </div>
+                    {subFields.length > 0 ? (
+                      subFields.map((sf) => (
+                        <FieldRenderer
+                          key={sf.fieldId}
+                          field={{
+                            ...sf,
+                            fieldId: `${field.fieldId}.${index}.${sf.fieldId}`,
+                          }}
+                          control={control}
+                        />
+                      ))
+                    ) : (
+                      <div className="text-muted-foreground text-sm">
+                        項目 {index + 1}
+                      </div>
+                    )}
                   </SortableRepeaterItem>
                 ))}
               </SortableContext>
