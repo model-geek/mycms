@@ -24,7 +24,7 @@ export const FIELD_RENDERERS: Record<
 > = {
   text: TextField,
   textArea: TextareaField,
-  richText: RichEditorField,
+  richEditor: RichEditorField,
   boolean: BooleanField,
   number: NumberField,
   select: SelectField,
