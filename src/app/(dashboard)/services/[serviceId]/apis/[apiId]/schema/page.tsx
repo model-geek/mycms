@@ -1,3 +1,5 @@
+import { notFound } from "next/navigation";
+import { getApiSchema } from "@/features/content-hub/manage-schema/query";
 import type { FieldItem } from "@/features/content-hub/manage-schema/components/sortable-field-list";
 
 import { SchemaBuilderWrapper } from "./schema-builder-wrapper";
@@ -9,15 +11,25 @@ export default async function SchemaPage({
 }) {
   const { serviceId, apiId } = await params;
 
-  // TODO: Fetch schema and fields from backend
-  const schemaName = "API";
-  const fields: FieldItem[] = [];
+  const schema = await getApiSchema(apiId);
+
+  if (!schema) {
+    notFound();
+  }
+
+  const fields: FieldItem[] = schema.fields.map((f) => ({
+    id: f.id,
+    name: f.name,
+    fieldId: f.fieldId,
+    kind: f.kind,
+    required: f.required,
+  }));
 
   return (
     <SchemaBuilderWrapper
       serviceId={serviceId}
       apiId={apiId}
-      schemaName={schemaName}
+      schemaName={schema.name}
       initialFields={fields}
     />
   );

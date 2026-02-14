@@ -1,7 +1,11 @@
 "use client";
 
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
+
 import { ContentList } from "@/features/content-hub/browse-contents/components/content-list";
 import type { ContentRow } from "@/features/content-hub/browse-contents/components/content-table";
+import { deleteContent } from "@/features/content-hub/manage-content/action";
 
 interface ContentListWrapperProps {
   serviceId: string;
@@ -16,9 +20,16 @@ export function ContentListWrapper({
   schemaName,
   contents,
 }: ContentListWrapperProps) {
-  function handleDelete(id: string) {
-    // TODO: Call server action to delete content
-    void id;
+  const router = useRouter();
+
+  async function handleDelete(id: string) {
+    const result = await deleteContent(id);
+    if (!result.success) {
+      toast.error(result.error);
+      return;
+    }
+    toast.success("コンテンツを削除しました");
+    router.refresh();
   }
 
   return (

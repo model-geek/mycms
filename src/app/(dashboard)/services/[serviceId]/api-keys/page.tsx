@@ -1,4 +1,4 @@
-import type { ApiKeyListItem } from "@/features/api-keys/model";
+import { listApiKeys } from "@/features/api-keys/manage-keys/query";
 
 import { ApiKeysPageWrapper } from "./api-keys-page-wrapper";
 
@@ -9,8 +9,7 @@ export default async function ApiKeysPage({
 }) {
   const { serviceId } = await params;
 
-  // TODO: Fetch API keys from backend (integrated at merge time)
-  const keys: ApiKeyListItem[] = [];
+  const keys = await listApiKeys(serviceId);
 
   return (
     <div className="p-6">

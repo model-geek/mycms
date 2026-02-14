@@ -1,3 +1,6 @@
+import { notFound } from "next/navigation";
+import { getServiceById } from "@/infrastructure/services/query";
+
 import { SettingsPageWrapper } from "./settings-page-wrapper";
 
 export default async function SettingsPage({
@@ -7,12 +10,17 @@ export default async function SettingsPage({
 }) {
   const { serviceId } = await params;
 
-  // TODO: Fetch service from backend (integrated at merge time)
+  const dbService = await getServiceById(serviceId);
+
+  if (!dbService) {
+    notFound();
+  }
+
   const service = {
-    id: serviceId,
-    name: "",
-    slug: "",
-    description: "",
+    id: dbService.id,
+    name: dbService.name,
+    slug: dbService.slug,
+    description: dbService.description ?? "",
   };
 
   return (

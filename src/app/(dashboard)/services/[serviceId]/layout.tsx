@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { ServiceProvider } from "@/infrastructure/services/service-context";
+import { getServiceById } from "@/infrastructure/services/query";
 
 export default async function ServiceLayout({
   children,
@@ -10,17 +11,17 @@ export default async function ServiceLayout({
 }) {
   const { serviceId } = await params;
 
-  // TODO: Fetch service from database
-  // For now, use placeholder data
-  const service = {
-    serviceId,
-    serviceName: "サービス",
-    serviceSlug: serviceId,
-  };
+  const dbService = await getServiceById(serviceId);
 
-  if (!service) {
+  if (!dbService) {
     notFound();
   }
+
+  const service = {
+    serviceId: dbService.id,
+    serviceName: dbService.name,
+    serviceSlug: dbService.slug,
+  };
 
   return (
     <ServiceProvider service={service}>

@@ -1,4 +1,4 @@
-import type { Media } from "@/features/media/model";
+import { listMedia } from "@/features/media/browse-media/query";
 
 import { MediaPageWrapper } from "./media-page-wrapper";
 
@@ -9,12 +9,11 @@ export default async function MediaPage({
 }) {
   const { serviceId } = await params;
 
-  // TODO: Fetch media from backend (integrated at merge time)
-  const mediaItems: Media[] = [];
+  const result = await listMedia({ serviceId });
 
   return (
     <div className="p-6">
-      <MediaPageWrapper serviceId={serviceId} initialMedia={mediaItems} />
+      <MediaPageWrapper serviceId={serviceId} initialMedia={result.media} />
     </div>
   );
 }

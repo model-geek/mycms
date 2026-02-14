@@ -1,4 +1,4 @@
-import type { MemberWithUser } from "@/features/members/model";
+import { listMembers } from "@/features/members/manage-members/query";
 
 import { MembersPageWrapper } from "./members-page-wrapper";
 
@@ -9,8 +9,7 @@ export default async function MembersPage({
 }) {
   const { serviceId } = await params;
 
-  // TODO: Fetch members from backend (integrated at merge time)
-  const members: MemberWithUser[] = [];
+  const members = await listMembers(serviceId);
 
   return (
     <div className="p-6">
