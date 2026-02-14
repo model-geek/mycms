@@ -22,7 +22,7 @@ import { GripVertical, Pencil, Trash2 } from "lucide-react";
 import { Badge } from "@/shared/ui/badge";
 import { Button } from "@/shared/ui/button";
 
-import { FIELD_TYPES, type FieldKind } from "./field-type-picker";
+import { FIELD_TYPES, type FieldKind } from "@/features/content-hub/field-types";
 
 export interface FieldItem {
   id: string;
