@@ -1,10 +1,8 @@
 import { notFound } from "next/navigation";
 import { getApiSchema } from "@/features/content-hub/manage-schema/query";
 import { listContents } from "@/features/content-hub/browse-contents/query";
-import {
-  buildDisplayColumns,
-  type ContentRow,
-} from "@/features/content-hub/browse-contents/components/content-table";
+import type { ContentRow } from "@/features/content-hub/browse-contents/components/content-table";
+import { buildDisplayColumns } from "@/features/content-hub/browse-contents/display-columns";
 
 import { ContentListWrapper } from "./content-list-wrapper";
 

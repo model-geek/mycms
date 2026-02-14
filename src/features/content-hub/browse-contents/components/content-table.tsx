@@ -25,17 +25,15 @@ import {
   TableRow,
 } from "@/shared/ui/table";
 
+import type { DisplayColumn } from "../display-columns";
+
+export type { DisplayColumn };
+
 export interface ContentRow {
   id: string;
   data: Record<string, unknown>;
   status: string;
   updatedAt: string;
-}
-
-export interface DisplayColumn {
-  fieldId: string;
-  name: string;
-  kind: string;
 }
 
 interface ContentTableProps {
@@ -59,19 +57,6 @@ const TEXT_KINDS = new Set([
   "boolean",
   "select",
 ]);
-
-/** スキーマフィールドから表示カラムを最大 MAX_COLUMNS 個選出。画像→テキスト系の順 */
-export function buildDisplayColumns(
-  fields: { fieldId: string; name: string; kind: string }[],
-  maxColumns = 10,
-): DisplayColumn[] {
-  const imageFields = fields.filter((f) => IMAGE_KINDS.has(f.kind));
-  const textFields = fields.filter((f) => TEXT_KINDS.has(f.kind));
-  const rest = fields.filter(
-    (f) => !IMAGE_KINDS.has(f.kind) && !TEXT_KINDS.has(f.kind),
-  );
-  return [...imageFields, ...textFields, ...rest].slice(0, maxColumns);
-}
 
 function CellValue({
   value,
