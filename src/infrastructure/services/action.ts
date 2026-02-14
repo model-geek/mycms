@@ -1,7 +1,9 @@
 "use server";
 
+import { del } from "@vercel/blob";
+
 import { db } from "@/db";
-import { services, members } from "@/db/schema";
+import { services, members, media } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { requireAuth, requirePermission } from "@/shared/lib/auth-guard";
 import { createServiceSchema, updateServiceSchema } from "./validations";
@@ -72,6 +74,16 @@ export async function updateService(
 export async function deleteService(id: string): Promise<ActionResult> {
   try {
     await requirePermission(id, "service.delete");
+
+    // Blob ファイルを削除（DB cascade 前に URL を取得）
+    const mediaRows = await db
+      .select({ url: media.url })
+      .from(media)
+      .where(eq(media.serviceId, id));
+
+    if (mediaRows.length > 0) {
+      await del(mediaRows.map((m) => m.url));
+    }
 
     const [service] = await db
       .delete(services)

@@ -48,9 +48,14 @@ export function StepResult({
         )}
       </div>
       {result.debugInfo && (
-        <pre className="text-xs bg-muted p-3 rounded-md overflow-auto max-h-40 whitespace-pre-wrap">
-          {result.debugInfo}
-        </pre>
+        <details className="w-full">
+          <summary className="text-xs text-amber-600 cursor-pointer">
+            一部のデータで警告があります（クリックで詳細）
+          </summary>
+          <pre className="mt-2 text-xs bg-muted p-3 rounded-md overflow-auto max-h-40 whitespace-pre-wrap">
+            {result.debugInfo}
+          </pre>
+        </details>
       )}
       <DialogFooter className="gap-2 sm:gap-0">
         <Button variant="outline" onClick={onClose}>
