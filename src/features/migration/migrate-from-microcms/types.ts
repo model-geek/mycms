@@ -60,4 +60,5 @@ export interface MigrationResult {
   serviceId: string;
   contentCount: number;
   mediaCount: number;
+  debugInfo?: string;
 }

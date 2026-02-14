@@ -47,6 +47,11 @@ export function StepResult({
           </div>
         )}
       </div>
+      {result.debugInfo && (
+        <pre className="text-xs bg-muted p-3 rounded-md overflow-auto max-h-40 whitespace-pre-wrap">
+          {result.debugInfo}
+        </pre>
+      )}
       <DialogFooter className="gap-2 sm:gap-0">
         <Button variant="outline" onClick={onClose}>
           閉じる

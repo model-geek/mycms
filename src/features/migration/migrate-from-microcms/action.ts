@@ -200,6 +200,7 @@ export async function executeMigration(
     // 2. コンテンツ移行（トランザクション外 - メディアアップロードはロールバック不可）
     let contentCount = 0;
     const mediaCache = new Map<string, MediaRef>();
+    const debugLogs: string[] = [];
 
     if (
       preview.includeContent &&
@@ -216,12 +217,15 @@ export async function executeMigration(
           schema.endpoint,
         );
 
-        console.log(`[migration] Starting content migration for ${schema.endpoint}: ${allContents.length} items, ${schemaInfo.fields.length} fields`);
-        console.log(`[migration] Fields:`, schemaInfo.fields.map(f => `${f.fieldId}(${f.mycmsKind})`).join(', '));
+        debugLogs.push(`fields: ${schemaInfo.fields.map(f => `${f.fieldId}(mycmsKind=${f.mycmsKind})`).join(', ')}`);
 
         for (const rawContent of allContents) {
           const raw = rawContent as Record<string, unknown>;
-          console.log(`[migration] Content keys: ${Object.keys(raw).join(', ')}`);
+          if (contentCount === 0) {
+            debugLogs.push(`1st content keys: ${Object.keys(raw).join(', ')}`);
+            const imageVal = raw.image;
+            debugLogs.push(`1st image value: ${JSON.stringify(imageVal)?.slice(0, 200)}`);
+          }
 
           const transformedData = await transformContentData(
             preview.microcmsServiceId,
@@ -230,6 +234,11 @@ export async function executeMigration(
             raw,
             mediaCache,
           );
+
+          if (contentCount === 0) {
+            const transformedImage = transformedData.image;
+            debugLogs.push(`1st transformed image: ${JSON.stringify(transformedImage)?.slice(0, 200)}`);
+          }
 
           const [inserted] = await db
             .insert(contents)
@@ -259,6 +268,7 @@ export async function executeMigration(
         serviceId: schemaResult.serviceId,
         contentCount,
         mediaCount: mediaCache.size,
+        debugInfo: debugLogs.join('\n'),
       },
     };
   } catch (error) {
