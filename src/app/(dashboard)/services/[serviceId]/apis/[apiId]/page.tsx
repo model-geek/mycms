@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { getApiSchema } from "@/features/content-hub/manage-schema/query";
 import { listContents } from "@/features/content-hub/browse-contents/query";
+import { MAX_LIST_LIMIT } from "@/features/content-hub/constants";
 import type { ContentRow } from "@/features/content-hub/browse-contents/components/content-table";
 import { buildDisplayColumns } from "@/features/content-hub/browse-contents/display-columns";
 
@@ -22,6 +23,7 @@ export default async function ApiContentListPage({
   const result = await listContents({
     apiSchemaId: apiId,
     serviceId,
+    limit: MAX_LIST_LIMIT,
   });
 
   const contents: ContentRow[] = result.contents.map((c) => ({
