@@ -51,8 +51,11 @@ async function transformField(
     case "select":
       return transformSelect(field, value);
 
-    case "media":
-      return transformMedia(serviceId, dbServiceId, value, mediaCache);
+    case "media": {
+      const mediaResult = await transformMedia(serviceId, dbServiceId, value, mediaCache);
+      console.log(`[transform] media field=${field.fieldId} input=${JSON.stringify(value)?.slice(0, 100)} result=${JSON.stringify(mediaResult)?.slice(0, 100)}`);
+      return mediaResult;
+    }
 
     case "mediaList":
       return transformMediaList(serviceId, dbServiceId, value, mediaCache);

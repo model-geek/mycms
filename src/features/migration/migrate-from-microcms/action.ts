@@ -216,12 +216,18 @@ export async function executeMigration(
           schema.endpoint,
         );
 
+        console.log(`[migration] Starting content migration for ${schema.endpoint}: ${allContents.length} items, ${schemaInfo.fields.length} fields`);
+        console.log(`[migration] Fields:`, schemaInfo.fields.map(f => `${f.fieldId}(${f.mycmsKind})`).join(', '));
+
         for (const rawContent of allContents) {
+          const raw = rawContent as Record<string, unknown>;
+          console.log(`[migration] Content keys: ${Object.keys(raw).join(', ')}`);
+
           const transformedData = await transformContentData(
             preview.microcmsServiceId,
             schemaResult.serviceId,
             schemaInfo.fields,
-            rawContent as Record<string, unknown>,
+            raw,
             mediaCache,
           );
 
