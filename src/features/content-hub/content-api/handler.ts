@@ -1,10 +1,10 @@
 import { db } from "@/db";
-import { apiSchemas, contents } from "@/db/schema";
+import { apiSchemas, contents, schemaFields as schemaFieldsTable } from "@/db/schema";
 import { validateApiKey } from "@/features/api-keys/validate-key/middleware";
 import { eq, and, desc, asc, count, sql, inArray, type SQL } from "drizzle-orm";
 import { NextResponse } from "next/server";
 
-import type { Content } from "../model";
+import type { Content, SchemaField } from "../model";
 
 import { buildFilterSql } from "./filter-parser";
 import type { ContentApiQuery, ContentListApiResponse } from "./model";
@@ -44,6 +44,15 @@ async function resolveSchema(serviceId: string, endpointSlug: string) {
       ),
     );
   return schema ?? null;
+}
+
+async function fetchSchemaFields(apiSchemaId: string): Promise<SchemaField[]> {
+  const rows = await db
+    .select()
+    .from(schemaFieldsTable)
+    .where(eq(schemaFieldsTable.apiSchemaId, apiSchemaId))
+    .orderBy(asc(schemaFieldsTable.position));
+  return rows as SchemaField[];
 }
 
 function buildOrderBy(orders: string | undefined) {
@@ -109,16 +118,19 @@ export async function handleListContents(
 
   const orderBy = buildOrderBy(query.orders);
 
-  const rows = await db
-    .select()
-    .from(contents)
-    .where(where)
-    .orderBy(...orderBy)
-    .limit(query.limit)
-    .offset(query.offset);
+  const [rows, fields] = await Promise.all([
+    db
+      .select()
+      .from(contents)
+      .where(where)
+      .orderBy(...orderBy)
+      .limit(query.limit)
+      .offset(query.offset),
+    fetchSchemaFields(schema.id),
+  ]);
 
   const serialized = (rows as Content[]).map((c) =>
-    serializeContent(c, query.fields),
+    serializeContent(c, query.fields, fields),
   );
 
   return NextResponse.json({
@@ -140,6 +152,8 @@ export async function handleGetContent(
     return errorResponse("APIが見つかりません", 404);
   }
 
+  const fields = await fetchSchemaFields(schema.id);
+
   if (schema.type === "object") {
     const [content] = await db
       .select()
@@ -158,8 +172,8 @@ export async function handleGetContent(
 
     const c = content as Content;
     const serialized = query.draftKey
-      ? serializeContentWithDraft(c, query.fields)
-      : serializeContent(c, query.fields);
+      ? serializeContentWithDraft(c, query.fields, fields)
+      : serializeContent(c, query.fields, fields);
 
     return NextResponse.json(serialized);
   }
@@ -185,8 +199,8 @@ export async function handleGetContent(
 
   const c = content as Content;
   const serialized = query.draftKey
-    ? serializeContentWithDraft(c, query.fields)
-    : serializeContent(c, query.fields);
+    ? serializeContentWithDraft(c, query.fields, fields)
+    : serializeContent(c, query.fields, fields);
 
   return NextResponse.json(serialized);
 }
