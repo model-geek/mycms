@@ -16,10 +16,19 @@ function buildZodSchema(fields: SchemaFieldDef[]) {
     switch (field.kind) {
       case "text":
       case "textArea":
-      case "select":
         fieldSchema = field.required
           ? z.string().min(1, `${field.name}は必須です`)
           : z.string().optional();
+        break;
+      case "richEditorV2":
+        fieldSchema = field.required
+          ? z.string().min(1, `${field.name}は必須です`)
+          : z.string().optional();
+        break;
+      case "select":
+        fieldSchema = field.required
+          ? z.array(z.string()).min(1, `${field.name}は必須です`)
+          : z.array(z.string()).optional();
         break;
       case "number":
         fieldSchema = field.required
@@ -33,6 +42,15 @@ function buildZodSchema(fields: SchemaFieldDef[]) {
         fieldSchema = field.required
           ? z.string().min(1, `${field.name}は必須です`)
           : z.string().optional();
+        break;
+      case "file":
+      case "iframe":
+        fieldSchema = field.required
+          ? z.unknown().refine(
+              (val) => val != null && val !== "",
+              `${field.name}は必須です`,
+            )
+          : z.unknown().optional();
         break;
       default:
         fieldSchema = z.unknown().optional();
@@ -60,15 +78,22 @@ function buildDefaultValues(
     switch (field.kind) {
       case "text":
       case "textArea":
-      case "select":
+      case "richEditorV2":
       case "date":
         defaults[field.fieldId] = "";
+        break;
+      case "select":
+        defaults[field.fieldId] = [];
         break;
       case "number":
         defaults[field.fieldId] = 0;
         break;
       case "boolean":
         defaults[field.fieldId] = false;
+        break;
+      case "file":
+      case "iframe":
+        defaults[field.fieldId] = null;
         break;
       default:
         defaults[field.fieldId] = undefined;

@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useTransition } from "react";
 import { toast } from "sonner";
 
+import type { ApiSchema, CustomField } from "@/features/content-hub/model";
 import { SchemaBuilder } from "@/features/content-hub/manage-schema/components/schema-builder";
 import type { FieldItem } from "@/features/content-hub/manage-schema/components/sortable-field-list";
 import {
@@ -18,6 +19,8 @@ interface SchemaBuilderWrapperProps {
   apiId: string;
   schemaName: string;
   initialFields: FieldItem[];
+  apiSchemas?: ApiSchema[];
+  customFields?: CustomField[];
 }
 
 export function SchemaBuilderWrapper({
@@ -25,6 +28,8 @@ export function SchemaBuilderWrapper({
   apiId,
   schemaName,
   initialFields,
+  apiSchemas,
+  customFields,
 }: SchemaBuilderWrapperProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -104,6 +109,10 @@ export function SchemaBuilderWrapper({
       initialFields={initialFields}
       onSave={handleSave}
       isPending={isPending}
+      serviceId={serviceId}
+      apiSchemaId={apiId}
+      apiSchemas={apiSchemas}
+      customFields={customFields}
     />
   );
 }

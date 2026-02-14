@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { getSchemaFields } from "@/features/content-hub/manage-schema/query";
+import { getCustomFields } from "@/features/content-hub/manage-custom-fields/query";
 import type { SchemaFieldDef } from "@/features/content-hub/manage-content/components/field-renderers";
 
 import { ContentEditorWrapper } from "./editor-wrapper";
@@ -11,7 +12,10 @@ export default async function NewContentPage({
 }) {
   const { serviceId, apiId } = await params;
 
-  const fields = await getSchemaFields(apiId);
+  const [fields, customFieldList] = await Promise.all([
+    getSchemaFields(apiId),
+    getCustomFields(apiId),
+  ]);
 
   if (fields.length === 0) {
     notFound();
@@ -34,6 +38,7 @@ export default async function NewContentPage({
       apiId={apiId}
       schemaFields={schemaFields}
       isNew
+      customFields={customFieldList}
     />
   );
 }
