@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Plus } from "lucide-react";
+import { Download, Plus } from "lucide-react";
 import { Button } from "@/shared/ui/button";
 import {
   Card,
@@ -19,6 +19,7 @@ import {
   DialogTrigger,
 } from "@/shared/ui/dialog";
 import { CreateServiceForm } from "@/infrastructure/services/create-service-form";
+import { MigrateDialog } from "@/features/migration/migrate-from-microcms/components/migrate-dialog";
 
 type Service = {
   id: string;
@@ -29,10 +30,16 @@ type Service = {
 
 export function ServiceList({ services }: { services: Service[] }) {
   const [open, setOpen] = useState(false);
+  const [migrateOpen, setMigrateOpen] = useState(false);
 
   return (
     <div className="space-y-4">
-      <div className="flex justify-end">
+      <div className="flex justify-end gap-2">
+        <Button variant="outline" onClick={() => setMigrateOpen(true)}>
+          <Download />
+          microCMS から移行
+        </Button>
+        <MigrateDialog open={migrateOpen} onOpenChange={setMigrateOpen} />
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild>
             <Button>
