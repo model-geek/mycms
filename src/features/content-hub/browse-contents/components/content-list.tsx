@@ -15,6 +15,7 @@ interface ContentListProps {
   schemaName: string;
   contents: ContentRow[];
   onDelete: (id: string) => void;
+  headerAction?: React.ReactNode;
 }
 
 const PAGE_SIZE = 20;
@@ -25,6 +26,7 @@ export function ContentList({
   schemaName,
   contents,
   onDelete,
+  headerAction,
 }: ContentListProps) {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -65,16 +67,19 @@ export function ContentList({
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-2">
         <h2 className="text-lg font-semibold">{schemaName}</h2>
-        <Button asChild>
-          <Link
-            href={`/services/${serviceId}/apis/${apiId}/contents/new`}
-          >
-            <Plus className="size-4" />
-            コンテンツを作成
-          </Link>
-        </Button>
+        <div className="flex items-center gap-2">
+          {headerAction}
+          <Button asChild>
+            <Link
+              href={`/services/${serviceId}/apis/${apiId}/contents/new`}
+            >
+              <Plus className="size-4" />
+              コンテンツを作成
+            </Link>
+          </Button>
+        </div>
       </div>
       <ContentFilters
         search={search}

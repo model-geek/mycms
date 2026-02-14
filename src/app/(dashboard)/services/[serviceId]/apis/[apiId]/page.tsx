@@ -30,6 +30,16 @@ export default async function ApiContentListPage({
     updatedAt: c.updatedAt.toISOString(),
   }));
 
+  const apiInfo = {
+    endpoint: schema.endpoint,
+    type: schema.type,
+    fields: schema.fields.map((f) => ({
+      fieldId: f.fieldId,
+      name: f.name,
+      kind: f.kind,
+    })),
+  };
+
   return (
     <div className="p-6">
       <ContentListWrapper
@@ -37,6 +47,7 @@ export default async function ApiContentListPage({
         apiId={apiId}
         schemaName={schema.name}
         contents={contents}
+        apiInfo={apiInfo}
       />
     </div>
   );
