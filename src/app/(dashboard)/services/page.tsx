@@ -1,6 +1,11 @@
 import { ServiceList } from "@/infrastructure/services/service-list";
+import { getServicesByOwner } from "@/infrastructure/services/query";
+import { requireAuth } from "@/shared/lib/auth-guard";
 
-export default function ServicesPage() {
+export default async function ServicesPage() {
+  const session = await requireAuth();
+  const services = await getServicesByOwner(session.user.id);
+
   return (
     <div className="space-y-6">
       <div>
@@ -9,7 +14,7 @@ export default function ServicesPage() {
           管理するサービスを選択するか、新しいサービスを作成してください
         </p>
       </div>
-      <ServiceList services={[]} />
+      <ServiceList services={services} />
     </div>
   );
 }
