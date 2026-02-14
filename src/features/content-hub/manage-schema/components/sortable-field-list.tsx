@@ -30,6 +30,7 @@ export interface FieldItem {
   fieldId: string;
   kind: string;
   required?: boolean | null;
+  validationRules?: unknown;
 }
 
 interface SortableFieldListProps {

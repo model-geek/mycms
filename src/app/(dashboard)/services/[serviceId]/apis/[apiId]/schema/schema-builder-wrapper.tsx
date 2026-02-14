@@ -51,12 +51,14 @@ export function SchemaBuilderWrapper({
               fieldId: field.fieldId,
               kind: field.kind,
               required: field.required ?? false,
+              validationRules: field.validationRules as Record<string, unknown> | undefined,
             });
           } else if (
             existing.name !== field.name ||
             existing.fieldId !== field.fieldId ||
             existing.kind !== field.kind ||
-            existing.required !== field.required
+            existing.required !== field.required ||
+            JSON.stringify(existing.validationRules) !== JSON.stringify(field.validationRules)
           ) {
             const oldFieldId = existing.fieldId !== field.fieldId
               ? existing.fieldId
@@ -68,6 +70,7 @@ export function SchemaBuilderWrapper({
                 fieldId: field.fieldId,
                 kind: field.kind,
                 required: field.required ?? false,
+                validationRules: field.validationRules as Record<string, unknown> | undefined,
               },
               oldFieldId,
             );

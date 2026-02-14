@@ -52,6 +52,7 @@ export function SchemaBuilder({
       fieldId: field.fieldId,
       kind: field.kind,
       required: field.required ?? false,
+      validationRules: field.validationRules,
     });
     setIsEditorOpen(true);
   }, []);
@@ -74,6 +75,7 @@ export function SchemaBuilder({
                 fieldId: data.fieldId,
                 kind: data.kind,
                 required: data.required,
+                validationRules: data.validationRules,
               }
             : f
         );
@@ -84,6 +86,7 @@ export function SchemaBuilder({
         fieldId: data.fieldId,
         kind: data.kind,
         required: data.required,
+        validationRules: data.validationRules,
       };
       return [...prev, newField];
     });

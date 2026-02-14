@@ -28,16 +28,21 @@ interface FieldTypePickerProps {
   value: string;
   onChange: (value: string) => void;
   disabled?: boolean;
+  excludeKinds?: Set<string>;
 }
 
-export function FieldTypePicker({ value, onChange, disabled }: FieldTypePickerProps) {
+export function FieldTypePicker({ value, onChange, disabled, excludeKinds }: FieldTypePickerProps) {
+  const entries = excludeKinds
+    ? Object.entries(FIELD_TYPE_OPTIONS).filter(([key]) => !excludeKinds.has(key))
+    : Object.entries(FIELD_TYPE_OPTIONS);
+
   return (
     <Select value={value} onValueChange={onChange} disabled={disabled}>
       <SelectTrigger className="w-full">
         <SelectValue placeholder="フィールドの型を選択" />
       </SelectTrigger>
       <SelectContent>
-        {Object.entries(FIELD_TYPE_OPTIONS).map(([key, type]) => (
+        {entries.map(([key, type]) => (
           <SelectItem key={key} value={key}>
             <span className="font-medium">{type.label}</span>
             <span className="text-muted-foreground ml-2 text-xs">
