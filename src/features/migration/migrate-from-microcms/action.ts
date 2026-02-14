@@ -12,7 +12,7 @@ import {
 import { requireAuth } from "@/shared/lib/auth-guard";
 import type { ActionResult } from "@/shared/types";
 
-import { transformContentData } from "./content-transformer";
+import { mediaErrors, transformContentData } from "./content-transformer";
 import { buildCrewMap, mapMicrocmsField } from "./field-mapper";
 import type { MediaRef } from "./media-uploader";
 import type {
@@ -261,6 +261,17 @@ export async function executeMigration(
         }
       }
     }
+
+    if (mediaErrors.length > 0) {
+      debugLogs.push(`--- media errors (${mediaErrors.length}) ---`);
+      debugLogs.push(...mediaErrors.slice(0, 10));
+      if (mediaErrors.length > 10) {
+        debugLogs.push(`... and ${mediaErrors.length - 10} more`);
+      }
+    }
+
+    // Reset for next call
+    mediaErrors.length = 0;
 
     return {
       success: true,

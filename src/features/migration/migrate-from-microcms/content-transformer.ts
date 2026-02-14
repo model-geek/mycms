@@ -1,6 +1,9 @@
-import type { MediaRef } from "./media-uploader";
+import type { MediaRef, MediaUploadResult } from "./media-uploader";
 import { uploadMicrocmsMedia } from "./media-uploader";
 import type { PreviewField } from "./types";
+
+/** デバッグ用: メディアアップロードエラーを収集 */
+export const mediaErrors: string[] = [];
 
 /**
  * microCMS Content API のデータを mycms の data 形式に変換する。
@@ -51,11 +54,8 @@ async function transformField(
     case "select":
       return transformSelect(field, value);
 
-    case "media": {
-      const mediaResult = await transformMedia(serviceId, dbServiceId, value, mediaCache);
-      console.log(`[transform] media field=${field.fieldId} input=${JSON.stringify(value)?.slice(0, 100)} result=${JSON.stringify(mediaResult)?.slice(0, 100)}`);
-      return mediaResult;
-    }
+    case "media":
+      return transformMedia(serviceId, dbServiceId, value, mediaCache);
 
     case "mediaList":
       return transformMediaList(serviceId, dbServiceId, value, mediaCache);
@@ -89,12 +89,22 @@ async function transformMedia(
   value: unknown,
   mediaCache: Map<string, MediaRef>,
 ): Promise<MediaRef | null> {
-  if (!value || typeof value !== "object") return null;
+  if (!value || typeof value !== "object") {
+    mediaErrors.push(`not object: ${JSON.stringify(value)?.slice(0, 80)}`);
+    return null;
+  }
 
   const mediaObj = value as { url?: string };
-  if (!mediaObj.url) return null;
+  if (!mediaObj.url) {
+    mediaErrors.push(`no url: ${JSON.stringify(value)?.slice(0, 80)}`);
+    return null;
+  }
 
-  return uploadMicrocmsMedia(serviceId, dbServiceId, mediaObj.url, mediaCache);
+  const result: MediaUploadResult = await uploadMicrocmsMedia(serviceId, dbServiceId, mediaObj.url, mediaCache);
+  if (result.error) {
+    mediaErrors.push(`upload err: ${result.error} (url=${mediaObj.url.slice(0, 60)})`);
+  }
+  return result.ref;
 }
 
 async function transformMediaList(

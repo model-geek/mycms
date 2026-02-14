@@ -9,6 +9,11 @@ export interface MediaRef {
   fileName: string;
 }
 
+export interface MediaUploadResult {
+  ref: MediaRef | null;
+  error?: string;
+}
+
 /**
  * microCMS CDN の画像を Vercel Blob にアップロードし、media テーブルに登録する。
  * 同じ microCMS URL は重複アップロードしない（mediaCache でキャッシュ）。
@@ -18,13 +23,13 @@ export async function uploadMicrocmsMedia(
   dbServiceId: string,
   imageUrl: string,
   mediaCache: Map<string, MediaRef>,
-): Promise<MediaRef | null> {
+): Promise<MediaUploadResult> {
   const cached = mediaCache.get(imageUrl);
-  if (cached) return cached;
+  if (cached) return { ref: cached };
 
   try {
     const res = await fetch(imageUrl);
-    if (!res.ok) return null;
+    if (!res.ok) return { ref: null, error: `fetch ${res.status} ${res.statusText}` };
 
     const buffer = Buffer.from(await res.arrayBuffer());
     const contentType = res.headers.get("content-type") ?? "image/jpeg";
@@ -60,9 +65,9 @@ export async function uploadMicrocmsMedia(
       fileName: inserted.fileName,
     };
     mediaCache.set(imageUrl, ref);
-    return ref;
+    return { ref };
   } catch (err) {
-    console.error(`[media-uploader] Failed to upload ${imageUrl}:`, err);
-    return null;
+    const msg = err instanceof Error ? err.message : String(err);
+    return { ref: null, error: msg };
   }
 }
