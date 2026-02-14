@@ -48,7 +48,8 @@ export function CreateServiceForm({
     },
   });
 
-  async function onSubmit(_values: CreateServiceValues) {
+  async function onSubmit(values: CreateServiceValues) {
+    void values;
     setIsPending(true);
     try {
       // TODO: Call server action to create service
