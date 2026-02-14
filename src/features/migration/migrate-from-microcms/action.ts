@@ -240,6 +240,14 @@ export async function executeMigration(
           if (contentCount === 0) {
             const transformedImage = transformedData.image;
             debugLogs.push(`1st transformed image: ${JSON.stringify(transformedImage)?.slice(0, 200)}`);
+            debugLogs.push(`errors after 1st: [${mediaUploadErrors.join('; ')}]`);
+            debugLogs.push(`mediaCache size: ${mediaCache.size}`);
+            // 全フィールドの変換結果を表示
+            for (const f of schemaInfo.fields) {
+              if (f.mycmsKind === 'media' || f.mycmsKind === 'repeater') {
+                debugLogs.push(`  ${f.fieldId}(${f.mycmsKind}): raw=${JSON.stringify(raw[f.fieldId])?.slice(0,80)} → ${JSON.stringify(transformedData[f.fieldId])?.slice(0,80)}`);
+              }
+            }
           }
 
           const [inserted] = await db
