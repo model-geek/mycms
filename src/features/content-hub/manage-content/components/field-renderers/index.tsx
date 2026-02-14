@@ -4,6 +4,8 @@ import type { ComponentType } from "react";
 
 import { BooleanField } from "./boolean-field";
 import { DateField } from "./date-field";
+import { FileField } from "./file-field";
+import { IframeField } from "./iframe-field";
 import { MediaField } from "./media-field";
 import { MediaListField } from "./media-list-field";
 import { NumberField } from "./number-field";
@@ -24,11 +26,13 @@ export const FIELD_RENDERERS: Record<
 > = {
   text: TextField,
   textArea: TextareaField,
-  richEditor: RichEditorField,
+  richEditorV2: RichEditorField,
   boolean: BooleanField,
   number: NumberField,
   select: SelectField,
   date: DateField,
+  file: FileField,
+  iframe: IframeField,
   relation: RelationField,
   relationList: RelationListField,
   repeater: RepeaterField,

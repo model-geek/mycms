@@ -26,6 +26,29 @@ export interface SchemaField {
   updatedAt: Date;
 }
 
+/** カスタムフィールド */
+export interface CustomField {
+  id: string;
+  apiSchemaId: string;
+  fieldId: string;
+  name: string;
+  fields: CustomFieldSubField[];
+  position: string[][] | null;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+/** カスタムフィールドのサブフィールド */
+export interface CustomFieldSubField {
+  idValue: string;
+  fieldId: string;
+  name: string;
+  kind: FieldKind;
+  required: boolean;
+  description?: string | null;
+  validationRules?: unknown;
+}
+
 /** コンテンツステータス */
 export type ContentStatus = "draft" | "published";
 

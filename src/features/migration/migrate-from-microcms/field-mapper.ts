@@ -9,8 +9,8 @@ import type {
 const KIND_MAP: Record<string, FieldKind> = {
   text: "text",
   textArea: "textArea",
-  richEditor: "richEditor",
-  richEditorV2: "richEditor",
+  richEditor: "richEditorV2",
+  richEditorV2: "richEditorV2",
   media: "media",
   mediaList: "mediaList",
   date: "date",

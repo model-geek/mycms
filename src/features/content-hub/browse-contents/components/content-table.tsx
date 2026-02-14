@@ -51,7 +51,7 @@ const IMAGE_KINDS = new Set(["media", "mediaList"]);
 const TEXT_KINDS = new Set([
   "text",
   "textArea",
-  "richEditor",
+  "richEditorV2",
   "number",
   "date",
   "boolean",
