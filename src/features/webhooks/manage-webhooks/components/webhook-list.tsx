@@ -7,14 +7,6 @@ import { toast } from "sonner";
 import { Badge } from "@/shared/ui/badge";
 import { Button } from "@/shared/ui/button";
 import {
-  Card,
-  CardAction,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/shared/ui/card";
-import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -96,30 +88,30 @@ export function WebhookList({ serviceId, webhooks: initialWebhooks }: WebhookLis
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Webhook</CardTitle>
-        <CardDescription>コンテンツの変更をリアルタイムに通知します</CardDescription>
-        <CardAction>
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-lg font-semibold">Webhook</h2>
+          <p className="text-sm text-muted-foreground">コンテンツの変更をリアルタイムに通知します</p>
+        </div>
+        <Button onClick={() => setDialogOpen(true)}>
+          <Plus className="size-4" />
+          新規作成
+        </Button>
+      </div>
+      {webhooks.length === 0 ? (
+        <div className="flex flex-col items-center justify-center rounded-lg border border-dashed py-12 text-center">
+          <Send className="text-muted-foreground mb-4 size-12" />
+          <p className="text-muted-foreground mb-4">
+            Webhookが登録されていません
+          </p>
           <Button onClick={() => setDialogOpen(true)}>
             <Plus className="size-4" />
-            新規作成
+            最初のWebhookを作成
           </Button>
-        </CardAction>
-      </CardHeader>
-      <CardContent>
-        {webhooks.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-12 text-center">
-            <Send className="text-muted-foreground mb-4 size-12" />
-            <p className="text-muted-foreground mb-4">
-              Webhookが登録されていません
-            </p>
-            <Button onClick={() => setDialogOpen(true)}>
-              <Plus className="size-4" />
-              最初のWebhookを作成
-            </Button>
-          </div>
-        ) : (
+        </div>
+      ) : (
+        <div className="rounded-lg border">
           <Table>
             <TableHeader>
               <TableRow>
@@ -179,8 +171,8 @@ export function WebhookList({ serviceId, webhooks: initialWebhooks }: WebhookLis
               ))}
             </TableBody>
           </Table>
-        )}
-      </CardContent>
+        </div>
+      )}
 
       <CreateWebhookDialog
         serviceId={serviceId}
@@ -188,6 +180,6 @@ export function WebhookList({ serviceId, webhooks: initialWebhooks }: WebhookLis
         onOpenChange={setDialogOpen}
         onCreated={handleCreated}
       />
-    </Card>
+    </div>
   );
 }

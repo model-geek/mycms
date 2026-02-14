@@ -5,14 +5,6 @@ import Link from "next/link";
 import { useCallback, useMemo, useState } from "react";
 
 import { Button } from "@/shared/ui/button";
-import {
-  Card,
-  CardAction,
-  CardContent,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/shared/ui/card";
 
 import { ContentFilters } from "./content-filters";
 import { ContentTable, type ContentRow } from "./content-table";
@@ -72,57 +64,53 @@ export function ContentList({
   }, [pagedContents]);
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>{schemaName}</CardTitle>
-        <CardAction>
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <h2 className="text-lg font-semibold">{schemaName}</h2>
+        <Button asChild>
+          <Link
+            href={`/services/${serviceId}/apis/${apiId}/contents/new`}
+          >
+            <Plus className="size-4" />
+            コンテンツを作成
+          </Link>
+        </Button>
+      </div>
+      <ContentFilters
+        search={search}
+        onSearchChange={setSearch}
+        statusFilter={statusFilter}
+        onStatusFilterChange={setStatusFilter}
+      />
+
+      {contents.length === 0 ? (
+        <div className="flex flex-col items-center justify-center rounded-lg border border-dashed py-12 text-center">
+          <FileText className="text-muted-foreground mb-4 size-12" />
+          <p className="text-muted-foreground mb-4">
+            コンテンツがありません
+          </p>
           <Button asChild>
             <Link
               href={`/services/${serviceId}/apis/${apiId}/contents/new`}
             >
               <Plus className="size-4" />
-              コンテンツを作成
+              最初のコンテンツを作成
             </Link>
           </Button>
-        </CardAction>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <ContentFilters
-          search={search}
-          onSearchChange={setSearch}
-          statusFilter={statusFilter}
-          onStatusFilterChange={setStatusFilter}
+        </div>
+      ) : (
+        <ContentTable
+          rows={pagedContents}
+          serviceId={serviceId}
+          apiId={apiId}
+          selectedIds={selectedIds}
+          onToggleSelect={handleToggleSelect}
+          onToggleSelectAll={handleToggleSelectAll}
+          onDelete={onDelete}
         />
-
-        {contents.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-12 text-center">
-            <FileText className="text-muted-foreground mb-4 size-12" />
-            <p className="text-muted-foreground mb-4">
-              コンテンツがありません
-            </p>
-            <Button asChild>
-              <Link
-                href={`/services/${serviceId}/apis/${apiId}/contents/new`}
-              >
-                <Plus className="size-4" />
-                最初のコンテンツを作成
-              </Link>
-            </Button>
-          </div>
-        ) : (
-          <ContentTable
-            rows={pagedContents}
-            serviceId={serviceId}
-            apiId={apiId}
-            selectedIds={selectedIds}
-            onToggleSelect={handleToggleSelect}
-            onToggleSelectAll={handleToggleSelectAll}
-            onDelete={onDelete}
-          />
-        )}
-      </CardContent>
+      )}
       {totalPages > 1 && (
-        <CardFooter className="justify-between">
+        <div className="flex items-center justify-between">
           <p className="text-muted-foreground text-sm">
             {filteredContents.length} 件中{" "}
             {page * PAGE_SIZE + 1}-
@@ -149,8 +137,8 @@ export function ContentList({
               次へ
             </Button>
           </div>
-        </CardFooter>
+        </div>
       )}
-    </Card>
+    </div>
   );
 }

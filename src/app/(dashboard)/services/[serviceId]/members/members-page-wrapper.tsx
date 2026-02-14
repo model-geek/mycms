@@ -8,14 +8,6 @@ import { MemberList } from "@/features/members/manage-members/components/member-
 import type { MemberWithUser } from "@/features/members/model";
 import type { Role } from "@/features/members/permissions";
 import { Button } from "@/shared/ui/button";
-import {
-  Card,
-  CardAction,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/shared/ui/card";
 
 interface MembersPageWrapperProps {
   serviceId: string;
@@ -78,31 +70,29 @@ export function MembersPageWrapper({
   );
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>メンバー</CardTitle>
-        <CardDescription>
-          サービスのメンバーとロールを管理します
-        </CardDescription>
-        <CardAction>
-          <InviteMemberDialog
-            onInvite={handleInvite}
-            trigger={
-              <Button>
-                <Plus className="size-4" />
-                招待
-              </Button>
-            }
-          />
-        </CardAction>
-      </CardHeader>
-      <CardContent>
-        <MemberList
-          members={membersList}
-          onChangeRole={handleChangeRole}
-          onRemove={handleRemove}
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-lg font-semibold">メンバー</h2>
+          <p className="text-sm text-muted-foreground">
+            サービスのメンバーとロールを管理します
+          </p>
+        </div>
+        <InviteMemberDialog
+          onInvite={handleInvite}
+          trigger={
+            <Button>
+              <Plus className="size-4" />
+              招待
+            </Button>
+          }
         />
-      </CardContent>
-    </Card>
+      </div>
+      <MemberList
+        members={membersList}
+        onChangeRole={handleChangeRole}
+        onRemove={handleRemove}
+      />
+    </div>
   );
 }

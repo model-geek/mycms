@@ -5,13 +5,6 @@ import { useCallback, useState, useTransition } from "react";
 import { MediaGrid } from "@/features/media/browse-media/components/media-grid";
 import type { Media } from "@/features/media/model";
 import { UploadZone } from "@/features/media/upload-media/components/upload-zone";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/shared/ui/card";
 
 interface MediaPageWrapperProps {
   serviceId: string;
@@ -55,15 +48,13 @@ export function MediaPageWrapper({
   );
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>メディア</CardTitle>
-        <CardDescription>画像やファイルを管理します</CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-6">
-        <UploadZone onUpload={handleUpload} />
-        <MediaGrid media={media} onDelete={handleDelete} />
-      </CardContent>
-    </Card>
+    <div className="space-y-6">
+      <div>
+        <h2 className="text-lg font-semibold">メディア</h2>
+        <p className="text-sm text-muted-foreground">画像やファイルを管理します</p>
+      </div>
+      <UploadZone onUpload={handleUpload} />
+      <MediaGrid media={media} onDelete={handleDelete} />
+    </div>
   );
 }

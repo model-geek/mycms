@@ -7,14 +7,6 @@ import { CreateKeyDialog } from "@/features/api-keys/create-key/components/creat
 import { ApiKeyList } from "@/features/api-keys/manage-keys/components/api-key-list";
 import type { ApiKeyListItem, CreateApiKeyResult } from "@/features/api-keys/model";
 import { Button } from "@/shared/ui/button";
-import {
-  Card,
-  CardAction,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/shared/ui/card";
 
 interface ApiKeysPageWrapperProps {
   serviceId: string;
@@ -65,27 +57,25 @@ export function ApiKeysPageWrapper({
   );
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>APIキー</CardTitle>
-        <CardDescription>
-          コンテンツAPIにアクセスするためのキーを管理します
-        </CardDescription>
-        <CardAction>
-          <CreateKeyDialog
-            onCreateKey={handleCreateKey}
-            trigger={
-              <Button>
-                <Plus className="size-4" />
-                新規作成
-              </Button>
-            }
-          />
-        </CardAction>
-      </CardHeader>
-      <CardContent>
-        <ApiKeyList keys={keys} onDelete={handleDelete} />
-      </CardContent>
-    </Card>
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-lg font-semibold">APIキー</h2>
+          <p className="text-sm text-muted-foreground">
+            コンテンツAPIにアクセスするためのキーを管理します
+          </p>
+        </div>
+        <CreateKeyDialog
+          onCreateKey={handleCreateKey}
+          trigger={
+            <Button>
+              <Plus className="size-4" />
+              新規作成
+            </Button>
+          }
+        />
+      </div>
+      <ApiKeyList keys={keys} onDelete={handleDelete} />
+    </div>
   );
 }
