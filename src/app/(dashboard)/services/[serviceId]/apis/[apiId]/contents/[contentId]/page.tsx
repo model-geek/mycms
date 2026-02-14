@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { getSchemaFields } from "@/features/content-hub/manage-schema/query";
+import { getCustomFields } from "@/features/content-hub/manage-custom-fields/query";
 import { getContentForEdit } from "@/features/content-hub/manage-content/query";
 import type { SchemaFieldDef } from "@/features/content-hub/manage-content/components/field-renderers";
 
@@ -12,9 +13,10 @@ export default async function EditContentPage({
 }) {
   const { serviceId, apiId, contentId } = await params;
 
-  const [fields, content] = await Promise.all([
+  const [fields, content, customFieldList] = await Promise.all([
     getSchemaFields(apiId),
     getContentForEdit(contentId),
+    getCustomFields(apiId),
   ]);
 
   if (!content) {
@@ -40,6 +42,7 @@ export default async function EditContentPage({
       schemaFields={schemaFields}
       initialData={content.editData}
       status={content.status}
+      customFields={customFieldList}
     />
   );
 }

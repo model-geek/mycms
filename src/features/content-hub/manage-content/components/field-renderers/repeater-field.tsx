@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo } from "react";
+import { useCallback, useContext, useMemo, useState } from "react";
 import type { Control, FieldValues } from "react-hook-form";
 import { useFieldArray, useFormContext } from "react-hook-form";
 import {
@@ -30,7 +30,16 @@ import {
   FormLabel,
   FormMessage,
 } from "@/shared/ui/form";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/shared/ui/select";
 
+import type { CustomField } from "@/features/content-hub/model";
+import { CustomFieldsContext } from "../content-editor";
 import { FieldRenderer } from "./index";
 import type { SchemaFieldDef } from "./types";
 
@@ -105,6 +114,28 @@ function SortableRepeaterItem({
   );
 }
 
+function buildSubFieldsFromCustomField(cf: CustomField): SchemaFieldDef[] {
+  return cf.fields.map((sf) => ({
+    id: sf.idValue,
+    fieldId: sf.fieldId,
+    name: sf.name,
+    kind: sf.kind,
+    required: sf.required,
+    description: sf.description ?? null,
+    position: 0,
+    validationRules: sf.validationRules,
+  }));
+}
+
+function buildDefaultsFromSubFields(subFields: SchemaFieldDef[]): Record<string, unknown> {
+  const defaults: Record<string, unknown> = {};
+  for (const sf of subFields) {
+    defaults[sf.fieldId] =
+      sf.kind === "boolean" ? false : sf.kind === "number" ? null : "";
+  }
+  return defaults;
+}
+
 export function RepeaterField({ field, control }: RepeaterFieldProps) {
   const { getValues, setValue } = useFormContext();
   const { fields: items, append, remove } = useFieldArray({
@@ -112,11 +143,31 @@ export function RepeaterField({ field, control }: RepeaterFieldProps) {
     name: field.fieldId,
   });
 
-  const subFields = useMemo(() => {
-    const rules = field.validationRules as {
-      subFields?: SubFieldDef[];
-    } | null;
-    return (rules?.subFields ?? []).map((sf) => ({
+  const allCustomFields = useContext(CustomFieldsContext);
+
+  const rules = useMemo(
+    () =>
+      field.validationRules as {
+        customFieldIds?: string[];
+        subFields?: SubFieldDef[];
+      } | null,
+    [field.validationRules],
+  );
+
+  const useCustomFieldMode = Boolean(
+    rules?.customFieldIds && rules.customFieldIds.length > 0,
+  );
+
+  const customFieldIds = rules?.customFieldIds;
+  const availableCustomFields = useMemo(() => {
+    if (!useCustomFieldMode || !customFieldIds) return [];
+    return allCustomFields.filter((cf) => customFieldIds.includes(cf.id));
+  }, [useCustomFieldMode, customFieldIds, allCustomFields]);
+
+  const legacySubFieldDefs = rules?.subFields;
+  const legacySubFields = useMemo(() => {
+    if (useCustomFieldMode) return [];
+    return (legacySubFieldDefs ?? []).map((sf) => ({
       id: sf.fieldId,
       fieldId: sf.fieldId,
       name: sf.name,
@@ -126,7 +177,9 @@ export function RepeaterField({ field, control }: RepeaterFieldProps) {
       position: 0,
       validationRules: sf.validationRules,
     })) satisfies SchemaFieldDef[];
-  }, [field.validationRules]);
+  }, [useCustomFieldMode, legacySubFieldDefs]);
+
+  const [addingSelectorOpen, setAddingSelectorOpen] = useState(false);
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -150,13 +203,39 @@ export function RepeaterField({ field, control }: RepeaterFieldProps) {
     [items, field.fieldId, getValues, setValue],
   );
 
-  const handleAdd = useCallback(() => {
-    const defaults: Record<string, unknown> = {};
-    for (const sf of subFields) {
-      defaults[sf.fieldId] = sf.kind === "boolean" ? false : sf.kind === "number" ? null : "";
-    }
+  const handleAddLegacy = useCallback(() => {
+    const defaults = buildDefaultsFromSubFields(legacySubFields);
     append(defaults);
-  }, [append, subFields]);
+  }, [append, legacySubFields]);
+
+  const handleAddCustomField = useCallback(
+    (cfId: string) => {
+      const cf = availableCustomFields.find((c) => c.id === cfId);
+      if (!cf) return;
+      const subFields = buildSubFieldsFromCustomField(cf);
+      const defaults = buildDefaultsFromSubFields(subFields);
+      append({ ...defaults, fieldId: cf.fieldId });
+      setAddingSelectorOpen(false);
+    },
+    [append, availableCustomFields],
+  );
+
+  function getSubFieldsForItem(
+    item: Record<string, unknown>,
+  ): SchemaFieldDef[] {
+    if (!useCustomFieldMode) return legacySubFields;
+    const itemFieldId = item.fieldId as string | undefined;
+    if (itemFieldId) {
+      const cf = availableCustomFields.find(
+        (c) => c.fieldId === itemFieldId,
+      );
+      if (cf) return buildSubFieldsFromCustomField(cf);
+    }
+    if (availableCustomFields.length === 1) {
+      return buildSubFieldsFromCustomField(availableCustomFields[0]);
+    }
+    return [];
+  }
 
   return (
     <FormField
@@ -180,42 +259,89 @@ export function RepeaterField({ field, control }: RepeaterFieldProps) {
                 items={items.map((item) => item.id)}
                 strategy={verticalListSortingStrategy}
               >
-                {items.map((item, index) => (
-                  <SortableRepeaterItem
-                    key={item.id}
-                    id={item.id}
-                    index={index}
-                    onRemove={remove}
-                  >
-                    {subFields.length > 0 ? (
-                      subFields.map((sf) => (
-                        <FieldRenderer
-                          key={sf.fieldId}
-                          field={{
-                            ...sf,
-                            fieldId: `${field.fieldId}.${index}.${sf.fieldId}`,
-                          }}
-                          control={control}
-                        />
-                      ))
-                    ) : (
-                      <div className="text-muted-foreground text-sm">
-                        項目 {index + 1}
-                      </div>
-                    )}
-                  </SortableRepeaterItem>
-                ))}
+                {items.map((item, index) => {
+                  const itemValues = getValues(
+                    `${field.fieldId}.${index}`,
+                  ) as Record<string, unknown>;
+                  const subFields = getSubFieldsForItem(itemValues);
+
+                  return (
+                    <SortableRepeaterItem
+                      key={item.id}
+                      id={item.id}
+                      index={index}
+                      onRemove={remove}
+                    >
+                      {subFields.length > 0 ? (
+                        subFields.map((sf) => (
+                          <FieldRenderer
+                            key={sf.fieldId}
+                            field={{
+                              ...sf,
+                              fieldId: `${field.fieldId}.${index}.${sf.fieldId}`,
+                            }}
+                            control={control}
+                          />
+                        ))
+                      ) : (
+                        <div className="text-muted-foreground text-sm">
+                          項目 {index + 1}
+                        </div>
+                      )}
+                    </SortableRepeaterItem>
+                  );
+                })}
               </SortableContext>
             </DndContext>
-            <Button
-              type="button"
-              variant="outline"
-              className="w-full"
-              onClick={handleAdd}
-            >
-              <Plus className="mr-2 h-4 w-4" />
-              項目を追加
-            </Button>
+
+            {useCustomFieldMode && availableCustomFields.length > 1 ? (
+              addingSelectorOpen ? (
+                <Select onValueChange={handleAddCustomField}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="追加するフィールドを選択" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {availableCustomFields.map((cf) => (
+                      <SelectItem key={cf.id} value={cf.id}>
+                        {cf.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              ) : (
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full"
+                  onClick={() => setAddingSelectorOpen(true)}
+                >
+                  <Plus className="mr-2 h-4 w-4" />
+                  項目を追加
+                </Button>
+              )
+            ) : useCustomFieldMode && availableCustomFields.length === 1 ? (
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full"
+                onClick={() =>
+                  handleAddCustomField(availableCustomFields[0].id)
+                }
+              >
+                <Plus className="mr-2 h-4 w-4" />
+                項目を追加
+              </Button>
+            ) : (
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full"
+                onClick={handleAddLegacy}
+              >
+                <Plus className="mr-2 h-4 w-4" />
+                項目を追加
+              </Button>
+            )}
           </div>
           <FormMessage />
         </FormItem>

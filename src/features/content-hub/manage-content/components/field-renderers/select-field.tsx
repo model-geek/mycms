@@ -21,18 +21,39 @@ import {
 
 import type { SchemaFieldDef } from "./types";
 
+interface SelectItemEntry {
+  id: string;
+  value: string;
+}
+
 interface SelectFieldProps {
   field: SchemaFieldDef;
   control: Control<FieldValues>;
 }
 
-export function SelectField({ field, control }: SelectFieldProps) {
+function getOptions(field: SchemaFieldDef): string[] {
   const rules = field.validationRules as {
+    selectItems?: SelectItemEntry[];
     options?: string[];
     multipleSelect?: boolean;
   } | null;
-  const options = rules?.options ?? [];
-  const isMultiple = rules?.multipleSelect === true;
+
+  if (rules?.selectItems) {
+    return rules.selectItems.map((item) => item.value);
+  }
+  return rules?.options ?? [];
+}
+
+function getIsMultiple(field: SchemaFieldDef): boolean {
+  const rules = field.validationRules as {
+    multipleSelect?: boolean;
+  } | null;
+  return rules?.multipleSelect === true;
+}
+
+export function SelectField({ field, control }: SelectFieldProps) {
+  const options = getOptions(field);
+  const isMultiple = getIsMultiple(field);
 
   if (isMultiple) {
     return (
@@ -88,34 +109,41 @@ export function SelectField({ field, control }: SelectFieldProps) {
     <FormField
       control={control}
       name={field.fieldId}
-      render={({ field: formField }) => (
-        <FormItem>
-          <FormLabel>
-            {field.name}
-            {field.required && (
-              <span className="text-destructive ml-1">*</span>
-            )}
-          </FormLabel>
-          <Select
-            onValueChange={formField.onChange}
-            defaultValue={formField.value}
-          >
-            <FormControl>
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="選択してください" />
-              </SelectTrigger>
-            </FormControl>
-            <SelectContent>
-              {options.map((option) => (
-                <SelectItem key={option} value={option}>
-                  {option}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <FormMessage />
-        </FormItem>
-      )}
+      render={({ field: formField }) => {
+        const currentValue: string[] = Array.isArray(formField.value)
+          ? formField.value
+          : [];
+        const displayValue = currentValue[0] ?? "";
+
+        return (
+          <FormItem>
+            <FormLabel>
+              {field.name}
+              {field.required && (
+                <span className="text-destructive ml-1">*</span>
+              )}
+            </FormLabel>
+            <Select
+              value={displayValue || undefined}
+              onValueChange={(val) => formField.onChange([val])}
+            >
+              <FormControl>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="選択してください" />
+                </SelectTrigger>
+              </FormControl>
+              <SelectContent>
+                {options.map((option) => (
+                  <SelectItem key={option} value={option}>
+                    {option}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <FormMessage />
+          </FormItem>
+        );
+      }}
     />
   );
 }

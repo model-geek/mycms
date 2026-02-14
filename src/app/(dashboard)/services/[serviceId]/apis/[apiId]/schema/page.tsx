@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
-import { getApiSchema } from "@/features/content-hub/manage-schema/query";
+import { getApiSchema, getApiSchemasByService } from "@/features/content-hub/manage-schema/query";
+import { getCustomFields } from "@/features/content-hub/manage-custom-fields/query";
 import type { FieldItem } from "@/features/content-hub/manage-schema/components/sortable-field-list";
 
 import { SchemaBuilderWrapper } from "./schema-builder-wrapper";
@@ -11,7 +12,11 @@ export default async function SchemaPage({
 }) {
   const { serviceId, apiId } = await params;
 
-  const schema = await getApiSchema(apiId);
+  const [schema, apiSchemas, customFieldList] = await Promise.all([
+    getApiSchema(apiId),
+    getApiSchemasByService(serviceId),
+    getCustomFields(apiId),
+  ]);
 
   if (!schema) {
     notFound();
@@ -32,6 +37,8 @@ export default async function SchemaPage({
       apiId={apiId}
       schemaName={schema.name}
       initialFields={fields}
+      apiSchemas={apiSchemas}
+      customFields={customFieldList}
     />
   );
 }

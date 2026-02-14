@@ -12,6 +12,8 @@ import {
   CardTitle,
 } from "@/shared/ui/card";
 
+import type { ApiSchema, CustomField } from "@/features/content-hub/model";
+
 import {
   FieldEditor,
   type FieldEditorData,
@@ -26,6 +28,10 @@ interface SchemaBuilderProps {
   initialFields: FieldItem[];
   onSave: (fields: FieldItem[]) => void;
   isPending?: boolean;
+  serviceId?: string;
+  apiSchemaId?: string;
+  apiSchemas?: ApiSchema[];
+  customFields?: CustomField[];
 }
 
 export function SchemaBuilder({
@@ -33,16 +39,22 @@ export function SchemaBuilder({
   initialFields,
   onSave,
   isPending,
+  serviceId,
+  apiSchemaId,
+  apiSchemas,
+  customFields,
 }: SchemaBuilderProps) {
   const [fields, setFields] = useState<FieldItem[]>(initialFields);
   const [editingField, setEditingField] = useState<FieldEditorData | null>(
     null
   );
   const [isEditorOpen, setIsEditorOpen] = useState(false);
+  const [editorFormKey, setEditorFormKey] = useState(0);
 
   const handleAddField = useCallback(() => {
     setEditingField(null);
     setIsEditorOpen(true);
+    setEditorFormKey((prev) => prev + 1);
   }, []);
 
   const handleEditField = useCallback((field: FieldItem) => {
@@ -55,6 +67,7 @@ export function SchemaBuilder({
       validationRules: field.validationRules,
     });
     setIsEditorOpen(true);
+    setEditorFormKey((prev) => prev + 1);
   }, []);
 
   const handleDeleteField = useCallback(
@@ -151,6 +164,11 @@ export function SchemaBuilder({
         onOpenChange={setIsEditorOpen}
         initialData={editingField}
         onSave={handleSaveField}
+        formKey={editorFormKey}
+        serviceId={serviceId}
+        apiSchemaId={apiSchemaId}
+        apiSchemas={apiSchemas}
+        customFields={customFields}
       />
     </>
   );

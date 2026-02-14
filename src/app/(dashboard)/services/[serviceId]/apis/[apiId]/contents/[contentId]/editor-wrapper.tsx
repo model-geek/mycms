@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { ContentEditor } from "@/features/content-hub/manage-content/components/content-editor";
 import type { SchemaFieldDef } from "@/features/content-hub/manage-content/components/field-renderers";
 import { updateContent } from "@/features/content-hub/manage-content/action";
+import type { CustomField } from "@/features/content-hub/model";
 
 interface EditContentWrapperProps {
   serviceId: string;
@@ -14,6 +15,7 @@ interface EditContentWrapperProps {
   schemaFields: SchemaFieldDef[];
   initialData: Record<string, unknown>;
   status: string;
+  customFields?: CustomField[];
 }
 
 export function EditContentWrapper({
@@ -23,6 +25,7 @@ export function EditContentWrapper({
   schemaFields,
   initialData,
   status,
+  customFields,
 }: EditContentWrapperProps) {
   const router = useRouter();
 
@@ -59,6 +62,7 @@ export function EditContentWrapper({
       status={status}
       onSaveDraft={handleSaveDraft}
       onPublish={handlePublish}
+      customFields={customFields}
     />
   );
 }
