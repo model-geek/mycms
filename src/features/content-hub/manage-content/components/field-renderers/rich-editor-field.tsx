@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect } from "react";
 import type { Control, FieldValues } from "react-hook-form";
-import { useEditor, EditorContent } from "@tiptap/react";
+import { type Editor, useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Underline from "@tiptap/extension-underline";
 import Link from "@tiptap/extension-link";
@@ -42,9 +42,8 @@ interface RichEditorFieldProps {
   control: Control<FieldValues>;
 }
 
-function Toolbar({ editor }: { editor: ReturnType<typeof useEditor> }) {
+function Toolbar({ editor }: { editor: Editor }) {
   const addLink = useCallback(() => {
-    if (!editor) return;
     const previousUrl = editor.getAttributes("link").href as string;
     const url = window.prompt("URL を入力", previousUrl ?? "");
     if (url === null) return;
@@ -56,13 +55,10 @@ function Toolbar({ editor }: { editor: ReturnType<typeof useEditor> }) {
   }, [editor]);
 
   const addImage = useCallback(() => {
-    if (!editor) return;
     const url = window.prompt("画像 URL を入力");
     if (!url) return;
     editor.chain().focus().setImage({ src: url }).run();
   }, [editor]);
-
-  if (!editor) return null;
 
   return (
     <div className="flex flex-wrap items-center gap-1 border-b p-1">
@@ -248,6 +244,7 @@ function RichEditorInput({
   placeholder: string;
 }) {
   const editor = useEditor({
+    immediatelyRender: false,
     extensions: [
       StarterKit,
       Underline,
@@ -270,7 +267,7 @@ function RichEditorInput({
 
   return (
     <div className="rounded-lg border">
-      <Toolbar editor={editor} />
+      {editor && <Toolbar editor={editor} />}
       <EditorContent
         editor={editor}
         className="prose prose-sm min-h-[200px] max-w-none p-4 focus:outline-none [&_.tiptap]:outline-none"
