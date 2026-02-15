@@ -1,4 +1,4 @@
-import { put } from "@vercel/blob";
+import { uploadToStorage, getPublicUrl } from "@/features/media/storage-client";
 
 import { db } from "@/db";
 import { media } from "@/db/schema";
@@ -15,7 +15,7 @@ export interface MediaUploadResult {
 }
 
 /**
- * microCMS CDN の画像を Vercel Blob にアップロードし、media テーブルに登録する。
+ * microCMS CDN の画像を Supabase Storage にアップロードし、media テーブルに登録する。
  * 同じ microCMS URL は重複アップロードしない（mediaCache でキャッシュ）。
  */
 export async function uploadMicrocmsMedia(
@@ -41,20 +41,17 @@ export async function uploadMicrocmsMedia(
     // microCMS URL: /assets/{projectId}/{assetUuid}/{fileName}
     const assetUuid = segments.pop() ?? crypto.randomUUID();
 
-    const blobPath = `${serviceId}/${assetUuid}-${fileName}`;
-    const blob = await put(blobPath, buffer, {
-      access: "public",
-      contentType,
-      addRandomSuffix: true,
-    });
+    const storagePath = `${serviceId}/${assetUuid}-${fileName}`;
+    const { pathname } = await uploadToStorage(buffer, storagePath, contentType);
+    const publicUrl = getPublicUrl(pathname);
 
     const [inserted] = await db
       .insert(media)
       .values({
         serviceId: dbServiceId,
         fileName,
-        url: blob.url,
-        blobPath,
+        url: publicUrl,
+        blobPath: pathname,
         mimeType: contentType,
         size: buffer.length,
       })

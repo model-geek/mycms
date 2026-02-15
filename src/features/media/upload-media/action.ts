@@ -4,11 +4,27 @@ import { db } from "@/db";
 import { media } from "@/db/schema";
 import type { ActionResult } from "@/shared/types";
 
-import { uploadToBlob } from "../blob-client";
+import { uploadToStorage } from "../storage-client";
 import type { Media } from "../model";
 
 import { validateFile } from "./validations";
 
+/**
+ * コンテンツフィールド用の軽量アップロード。media テーブルには挿入しない。
+ */
+export async function uploadFile(
+  formData: FormData,
+): Promise<{ url: string } | null> {
+  const file = formData.get("file") as File | null;
+  if (!file) return null;
+  const storagePath = `uploads/${crypto.randomUUID()}-${file.name}`;
+  const { url } = await uploadToStorage(file, storagePath, file.type);
+  return { url };
+}
+
+/**
+ * メディアライブラリ用アップロード。ストレージ + media テーブルに保存。
+ */
 export async function uploadMedia(
   serviceId: string,
   formData: FormData,
@@ -25,7 +41,8 @@ export async function uploadMedia(
       return { success: false, error: validationError.message };
     }
 
-    const { url, pathname } = await uploadToBlob(file, serviceId);
+    const storagePath = `${serviceId}/${crypto.randomUUID()}-${file.name}`;
+    const { url, pathname } = await uploadToStorage(file, storagePath, file.type);
 
     const [row] = await db
       .insert(media)

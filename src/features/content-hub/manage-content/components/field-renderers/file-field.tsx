@@ -12,6 +12,7 @@ import {
   FormLabel,
   FormMessage,
 } from "@/shared/ui/form";
+import { uploadFile } from "@/features/media/upload-media/action";
 
 import type { SchemaFieldDef } from "./types";
 
@@ -39,12 +40,12 @@ export function FileField({ field, control }: FileFieldProps) {
           if (!file) return;
           setUploading(true);
           try {
-            const { upload } = await import("@vercel/blob/client");
-            const blob = await upload(file.name, file, {
-              access: "public",
-              handleUploadUrl: "/api/upload",
-            });
-            formField.onChange({ url: blob.url, fileSize: file.size });
+            const formData = new FormData();
+            formData.append("file", file);
+            const result = await uploadFile(formData);
+            if (result) {
+              formField.onChange({ url: result.url, fileSize: file.size });
+            }
           } finally {
             setUploading(false);
             if (inputRef.current) inputRef.current.value = "";

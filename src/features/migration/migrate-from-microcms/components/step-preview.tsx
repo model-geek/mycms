@@ -62,7 +62,7 @@ export function StepPreview({
           {preview.includeContent && totalContents > 0 && (
             <p className="mt-1">
               <strong>{totalContents} 件のコンテンツ</strong>
-              も移行されます（メディアは Vercel Blob にアップロード）
+              も移行されます（メディアは Supabase Storage にアップロード）
             </p>
           )}
         </div>

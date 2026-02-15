@@ -5,7 +5,7 @@ import { media } from "@/db/schema";
 import type { ActionResult } from "@/shared/types";
 import { eq, and } from "drizzle-orm";
 
-import { deleteFromBlob } from "../blob-client";
+import { deleteFromStorage } from "../storage-client";
 import type { Media } from "../model";
 
 export async function deleteMedia(
@@ -24,7 +24,7 @@ export async function deleteMedia(
 
     const m = row as Media;
 
-    await deleteFromBlob(m.url);
+    await deleteFromStorage([m.blobPath]);
 
     await db
       .delete(media)
