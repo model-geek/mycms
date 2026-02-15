@@ -165,7 +165,7 @@ export function StepCredentials({ isPending, onSubmit }: StepCredentialsProps) {
                   onCheckedChange={field.onChange}
                 />
                 <Label htmlFor="includeContent" className="text-sm font-normal">
-                  コンテンツも移行する（画像は Vercel Blob にアップロードされます）
+                  コンテンツも移行する（画像は Supabase Storage にアップロードされます）
                 </Label>
               </div>
             )}

@@ -1,6 +1,6 @@
 "use server";
 
-import { del } from "@vercel/blob";
+import { deleteFromStorage } from "@/features/media/storage-client";
 
 import { db } from "@/db";
 import { services, members, media } from "@/db/schema";
@@ -75,14 +75,14 @@ export async function deleteService(id: string): Promise<ActionResult> {
   try {
     await requirePermission(id, "service.delete");
 
-    // Blob ファイルを削除（DB cascade 前に URL を取得）
+    // ストレージファイルを削除（DB cascade 前にパスを取得）
     const mediaRows = await db
-      .select({ url: media.url })
+      .select({ blobPath: media.blobPath })
       .from(media)
       .where(eq(media.serviceId, id));
 
     if (mediaRows.length > 0) {
-      await del(mediaRows.map((m) => m.url));
+      await deleteFromStorage(mediaRows.map((m) => m.blobPath));
     }
 
     const [service] = await db
