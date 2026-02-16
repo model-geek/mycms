@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import type { Control, FieldValues } from "react-hook-form";
 import { ImageIcon, Plus, X } from "lucide-react";
 
@@ -12,6 +12,7 @@ import {
   FormLabel,
   FormMessage,
 } from "@/shared/ui/form";
+import { uploadFile } from "@/features/media/upload-media/action";
 
 import type { SchemaFieldDef } from "./types";
 
@@ -27,7 +28,8 @@ interface MediaItem {
 }
 
 export function MediaListField({ field, control }: MediaListFieldProps) {
-  const [, setPickerOpen] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [uploading, setUploading] = useState(false);
 
   return (
     <FormField
@@ -40,6 +42,30 @@ export function MediaListField({ field, control }: MediaListFieldProps) {
           formField.onChange(items.filter((item) => item.id !== id));
         };
 
+        async function handleUpload(e: React.ChangeEvent<HTMLInputElement>) {
+          const file = e.target.files?.[0];
+          if (!file) return;
+          setUploading(true);
+          try {
+            const formData = new FormData();
+            formData.append("file", file);
+            const result = await uploadFile(formData);
+            if (result) {
+              formField.onChange([
+                ...items,
+                {
+                  id: crypto.randomUUID(),
+                  url: result.url,
+                  fileName: file.name,
+                },
+              ]);
+            }
+          } finally {
+            setUploading(false);
+            if (inputRef.current) inputRef.current.value = "";
+          }
+        }
+
         return (
           <FormItem>
             <FormLabel>
@@ -50,6 +76,13 @@ export function MediaListField({ field, control }: MediaListFieldProps) {
             </FormLabel>
             <FormControl>
               <div className="space-y-2">
+                <input
+                  ref={inputRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handleUpload}
+                />
                 {items.length > 0 && (
                   <div className="grid grid-cols-4 gap-2">
                     {items.map((item) => (
@@ -77,19 +110,22 @@ export function MediaListField({ field, control }: MediaListFieldProps) {
                   type="button"
                   variant="outline"
                   className={items.length === 0 ? "h-32 w-full" : "w-full"}
-                  onClick={() => setPickerOpen(true)}
+                  disabled={uploading}
+                  onClick={() => inputRef.current?.click()}
                 >
                   {items.length === 0 ? (
                     <div className="flex flex-col items-center gap-2">
                       <ImageIcon className="h-8 w-8 text-muted-foreground" />
                       <span className="text-sm text-muted-foreground">
-                        メディアを選択
+                        {uploading ? "アップロード中..." : "画像を選択"}
                       </span>
                     </div>
+                  ) : uploading ? (
+                    "アップロード中..."
                   ) : (
                     <>
                       <Plus className="mr-2 h-4 w-4" />
-                      メディアを追加
+                      画像を追加
                     </>
                   )}
                 </Button>
